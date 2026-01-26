@@ -34,6 +34,12 @@ RUN apt update && \
     apt clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+RUN touch /home/kasm-user/.zshrc && \
+    # Force Powerlevel10k config tự động (không hỏi user)
+    echo '[[ ! -f ~/.p10k.zsh ]] && p10k configure --non-interactive' >> /home/kasm-user/.zshrc && \
+    # Đảm bảo load p10k ngay
+    echo '[[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh' >> /home/kasm-user/.zshrc
+
 USER 1000
 WORKDIR /home/kasm-user
 EXPOSE 5901
