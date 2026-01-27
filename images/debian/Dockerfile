@@ -13,7 +13,9 @@ RUN apt update && \
         zsh thefuck fontconfig \
         libgbm1 libxshmfence1 libasound2 \
         chromium \
-        x11-utils && \
+        x11-utils \
+        flameshot \
+        i3 rofi picom feh i3status && \
     # Setup VSCode
     wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /usr/share/keyrings/microsoft-archive-keyring.gpg && \
     echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-archive-keyring.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list && \
@@ -97,6 +99,58 @@ RUN echo 'export GTK_IM_MODULE=fcitx' >> ~/.xprofile && \
     echo 'export SDL_IM_MODULE=fcitx' >> ~/.xprofile && \
     echo 'fcitx5 -d &' >> ~/.xprofile
 
+# --- SETUP I3WM ---
+# 1. Tạo thư mục config
+RUN mkdir -p /home/kasm-user/.config/i3 && \
+    mkdir -p /home/kasm-user/.config/rofi
+
+# 2. Tạo file config cơ bản cho i3 (để tránh wizard lần đầu)
+# Lưu ý: "mod4" là phím Windows.
+RUN echo 'set $mod Mod4' > /home/kasm-user/.config/i3/config && \
+    echo 'font pango:MesloLGS NF 10' >> /home/kasm-user/.config/i3/config && \
+    echo 'exec --no-startup-id picom -b' >> /home/kasm-user/.config/i3/config && \
+    echo 'exec --no-startup-id fcitx5 -d' >> /home/kasm-user/.config/i3/config && \
+    # Set hình nền (Kasm mặc định có hình nền ở bg_default.png)
+    echo 'exec_always --no-startup-id feh --bg-scale /usr/share/backgrounds/bg_default.png' >> /home/kasm-user/.config/i3/config && \
+    # Phím tắt mở Terminal (Dùng WezTerm)
+    echo 'bindsym $mod+Return exec wezterm' >> /home/kasm-user/.config/i3/config && \
+    # Phím tắt tắt cửa sổ
+    echo 'bindsym $mod+Shift+q kill' >> /home/kasm-user/.config/i3/config && \
+    # Phím tắt mở Rofi (Launcher)
+    echo 'bindsym $mod+d exec "rofi -show drun"' >> /home/kasm-user/.config/i3/config && \
+    # Các điều hướng cửa sổ cơ bản
+    echo 'bindsym $mod+Left focus left' >> /home/kasm-user/.config/i3/config && \
+    echo 'bindsym $mod+Down focus down' >> /home/kasm-user/.config/i3/config && \
+    echo 'bindsym $mod+Up focus up' >> /home/kasm-user/.config/i3/config && \
+    echo 'bindsym $mod+Right focus right' >> /home/kasm-user/.config/i3/config && \
+    echo 'bindsym $mod+Shift+Left move left' >> /home/kasm-user/.config/i3/config && \
+    echo 'bindsym $mod+Shift+Down move down' >> /home/kasm-user/.config/i3/config && \
+    echo 'bindsym $mod+Shift+Up move up' >> /home/kasm-user/.config/i3/config && \
+    echo 'bindsym $mod+Shift+Right move right' >> /home/kasm-user/.config/i3/config && \
+    echo 'bindsym $mod+h split h' >> /home/kasm-user/.config/i3/config && \
+    echo 'bindsym $mod+v split v' >> /home/kasm-user/.config/i3/config && \
+    echo 'bindsym $mod+f fullscreen toggle' >> /home/kasm-user/.config/i3/config && \
+    echo 'bindsym $mod+s layout stacking' >> /home/kasm-user/.config/i3/config && \
+    echo 'bindsym $mod+w layout tabbed' >> /home/kasm-user/.config/i3/config && \
+    echo 'bindsym $mod+e layout toggle split' >> /home/kasm-user/.config/i3/config && \
+    echo 'bindsym $mod+Shift+space floating toggle' >> /home/kasm-user/.config/i3/config && \
+    echo 'bindsym $mod+space focus mode_toggle' >> /home/kasm-user/.config/i3/config && \
+    echo 'bindsym $mod+Shift+r restart' >> /home/kasm-user/.config/i3/config && \
+    echo 'bindsym $mod+Shift+e exec "i3-nagbar -t warning -m \"Exit?\" -B \"Yes\" \"i3-msg exit\""' >> /home/kasm-user/.config/i3/config && \
+    # Gaps (Khoảng cách giữa các cửa sổ - Modern Look)
+    echo 'gaps inner 10' >> /home/kasm-user/.config/i3/config && \
+    echo 'gaps outer 0' >> /home/kasm-user/.config/i3/config && \
+    echo 'smart_gaps on' >> /home/kasm-user/.config/i3/config && \
+    # Thanh trạng thái
+    echo 'bar { status_command i3status position top }' >> /home/kasm-user/.config/i3/config
+
+# 3. QUAN TRỌNG: Tạo file .xsession để Kasm chạy i3 thay vì XFCE
+# Kasm VNC startup script sẽ ưu tiên file này
+RUN echo '#!/bin/bash' > /home/kasm-user/.xsession && \
+    echo 'export DESTKTOP_SESSION=i3' >> /home/kasm-user/.xsession && \
+    echo 'exec i3' >> /home/kasm-user/.xsession && \
+    chmod +x /home/kasm-user/.xsession
+
 USER root
 
 # --- PHẦN 4: SYNC ---
@@ -106,6 +160,8 @@ RUN cp -r /home/kasm-user/.oh-my-zsh /home/kasm-default-profile/.oh-my-zsh && \
     cp /home/kasm-user/.zshrc /home/kasm-default-profile/.zshrc && \
     cp /home/kasm-user/.p10k.zsh /home/kasm-default-profile/.p10k.zsh && \
     cp /home/kasm-user/.xprofile /home/kasm-default-profile/.xprofile && \
+    cp -r /home/kasm-user/.config /home/kasm-default-profile/.config && \
+    cp /home/kasm-user/.xsession /home/kasm-default-profile/.xsession && \
     chown -R 1000:1000 /home/kasm-default-profile
 
 USER 1000
