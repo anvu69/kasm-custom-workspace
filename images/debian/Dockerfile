@@ -3,7 +3,6 @@ FROM kasmweb/core-debian-bookworm:1.18.0
 USER root
 
 # --- PHẦN 1: CÀI ĐẶT PACKAGE ---
-# Đã loại bỏ 'fzf' khỏi apt để cài thủ công bên dưới
 RUN apt update && \
     apt install -y --no-install-recommends \
         build-essential git curl wget python3 python3-pip nodejs npm golang-go \
@@ -34,8 +33,7 @@ RUN apt update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # --- PHẦN 2: WRAPPER SCRIPTS (CLEAN LOGS) ---
-
-# VSCode: Thêm 2>/dev/null để giấu warning 'unity-launch'
+# VSCode
 RUN sed -i 's|^Exec=.*|Exec=/usr/share/code/code --no-sandbox --unity-launch %F|' /usr/share/applications/code.desktop && \
     sed -i 's|Icon=.*|Icon=com.visualstudio.code|' /usr/share/applications/code.desktop && \
     mv /usr/bin/code /usr/bin/code-orig && \
@@ -43,7 +41,7 @@ RUN sed -i 's|^Exec=.*|Exec=/usr/share/code/code --no-sandbox --unity-launch %F|
     echo '/usr/bin/code-orig --no-sandbox --unity-launch "$@" 2>/dev/null' >> /usr/bin/code && \
     chmod +x /usr/bin/code
 
-# Chromium: Thêm --test-type để giấu warning 'unsupported command-line flag'
+# Chromium
 RUN sed -i 's|Exec=/usr/bin/chromium %U|Exec=/usr/bin/chromium --no-sandbox --test-type %U|' /usr/share/applications/chromium.desktop && \
     mv /usr/bin/chromium /usr/bin/chromium-orig && \
     echo '#!/bin/bash' > /usr/bin/chromium && \
@@ -55,8 +53,8 @@ RUN usermod -s /usr/bin/zsh kasm-user
 USER 1000
 
 # --- PHẦN 3: USER SETUP (ZSH, FZF, P10K) ---
-
 ENV ZSH=/home/kasm-user/.oh-my-zsh
+
 # 3.1 Cài OMZ và Plugins
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended && \
     git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH}/custom/plugins/zsh-autosuggestions && \
@@ -66,19 +64,18 @@ RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master
     git clone https://github.com/rupa/z ${ZSH}/custom/plugins/z && \
     git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH}/custom/themes/powerlevel10k
 
-# 3.2 Cài FZF Thủ công (Fix lỗi warning đường dẫn Debian)
+# 3.2 Cài FZF Thủ công
 RUN git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf && \
     ~/.fzf/install --bin
 
-# 3.3 Pre-download Gitstatusd (Fix lỗi fetching... khi khởi động)
-# Tải binary gitstatusd cache sẵn vào thư mục theme để P10k không phải tải lại
+# 3.3 Pre-download Gitstatusd (Đã fix link v1.5.4)
 RUN mkdir -p ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin && \
     wget -O ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin/gitstatusd-linux-x86_64.tar.gz https://github.com/romkatv/gitstatus/releases/download/v1.5.4/gitstatusd-linux-x86_64.tar.gz && \
     tar -xzf ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin/gitstatusd-linux-x86_64.tar.gz -C ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin/ && \
     rm ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin/gitstatusd-linux-x86_64.tar.gz
 
 # 3.4 Config .zshrc
-# Lưu ý: Đã xóa 'fzf' khỏi plugins=(...) để tránh xung đột với bản cài tay
+# Thay đổi quan trọng: Source trực tiếp file trong folder .fzf thay vì tìm file .fzf.zsh
 RUN echo 'export ZSH=$HOME/.oh-my-zsh' > ~/.zshrc && \
     echo 'ZSH_THEME="powerlevel10k/powerlevel10k"' >> ~/.zshrc && \
     echo 'plugins=(git zsh-autosuggestions zsh-syntax-highlighting zsh-autocomplete zsh-completions z thefuck)' >> ~/.zshrc && \
@@ -87,8 +84,9 @@ RUN echo 'export ZSH=$HOME/.oh-my-zsh' > ~/.zshrc && \
     echo 'export LC_ALL=en_US.UTF-8' >> ~/.zshrc && \
     echo 'POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true' >> ~/.zshrc && \
     echo '[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh' >> ~/.zshrc && \
-    # Source FZF cài tay
-    echo '[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh' >> ~/.zshrc
+    # Source FZF trực tiếp từ repo (Fix lỗi copy không tìm thấy file)
+    echo 'source ~/.fzf/shell/key-bindings.zsh' >> ~/.zshrc && \
+    echo 'source ~/.fzf/shell/completion.zsh' >> ~/.zshrc
 
 RUN curl -fsSL https://raw.githubusercontent.com/romkatv/powerlevel10k/master/config/p10k-lean.zsh -o ~/.p10k.zsh && \
     sed -i 's/POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(/POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(os_icon /' ~/.p10k.zsh
@@ -102,13 +100,12 @@ RUN echo 'export GTK_IM_MODULE=fcitx' >> ~/.xprofile && \
 USER root
 
 # --- PHẦN 4: SYNC ---
+# Đã xóa dòng cp .fzf.zsh gây lỗi
 RUN cp -r /home/kasm-user/.oh-my-zsh /home/kasm-default-profile/.oh-my-zsh && \
     cp -r /home/kasm-user/.fzf /home/kasm-default-profile/.fzf && \
     cp /home/kasm-user/.zshrc /home/kasm-default-profile/.zshrc && \
     cp /home/kasm-user/.p10k.zsh /home/kasm-default-profile/.p10k.zsh && \
     cp /home/kasm-user/.xprofile /home/kasm-default-profile/.xprofile && \
-    # Sync cả file config fzf sinh ra
-    cp /home/kasm-user/.fzf.zsh /home/kasm-default-profile/.fzf.zsh && \
     chown -R 1000:1000 /home/kasm-default-profile
 
 USER 1000
