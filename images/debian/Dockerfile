@@ -50,11 +50,12 @@ RUN sed -i 's|Exec=/usr/bin/chromium %U|Exec=/usr/bin/chromium --no-sandbox --te
     echo '/usr/bin/chromium-orig --no-sandbox --test-type "$@" 2>/dev/null' >> /usr/bin/chromium && \
     chmod +x /usr/bin/chromium
 
+# --- PHẦN 3: USER SETUP (ZSH, FZF, P10K) ---
+ENV START_XFCE4=0
+
 RUN usermod -s /usr/bin/zsh kasm-user
 
 USER 1000
-
-# --- PHẦN 3: USER SETUP (ZSH, FZF, P10K) ---
 ENV ZSH=/home/kasm-user/.oh-my-zsh
 
 # 3.1 Cài OMZ và Plugins
@@ -70,14 +71,13 @@ RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master
 RUN git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf && \
     ~/.fzf/install --bin
 
-# 3.3 Pre-download Gitstatusd (Đã fix link v1.5.4)
+# 3.3 Pre-download Gitstatusd (v1.5.4)
 RUN mkdir -p ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin && \
     wget -O ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin/gitstatusd-linux-x86_64.tar.gz https://github.com/romkatv/gitstatus/releases/download/v1.5.4/gitstatusd-linux-x86_64.tar.gz && \
     tar -xzf ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin/gitstatusd-linux-x86_64.tar.gz -C ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin/ && \
     rm ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin/gitstatusd-linux-x86_64.tar.gz
 
 # 3.4 Config .zshrc
-# Thay đổi quan trọng: Source trực tiếp file trong folder .fzf thay vì tìm file .fzf.zsh
 RUN echo 'export ZSH=$HOME/.oh-my-zsh' > ~/.zshrc && \
     echo 'ZSH_THEME="powerlevel10k/powerlevel10k"' >> ~/.zshrc && \
     echo 'plugins=(git zsh-autosuggestions zsh-syntax-highlighting zsh-autocomplete zsh-completions z thefuck)' >> ~/.zshrc && \
@@ -86,10 +86,11 @@ RUN echo 'export ZSH=$HOME/.oh-my-zsh' > ~/.zshrc && \
     echo 'export LC_ALL=en_US.UTF-8' >> ~/.zshrc && \
     echo 'POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true' >> ~/.zshrc && \
     echo '[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh' >> ~/.zshrc && \
-    # Source FZF trực tiếp từ repo (Fix lỗi copy không tìm thấy file)
     echo 'source ~/.fzf/shell/key-bindings.zsh' >> ~/.zshrc && \
-    echo 'source ~/.fzf/shell/completion.zsh' >> ~/.zshrc
+    echo 'source ~/.fzf/shell/completion.zsh' >> ~/.zshrc && \
+    echo 'alias shot="flameshot gui"' >> ~/.zshrc
 
+# P10k Config
 RUN curl -fsSL https://raw.githubusercontent.com/romkatv/powerlevel10k/master/config/p10k-lean.zsh -o ~/.p10k.zsh && \
     sed -i 's/POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(/POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(os_icon /' ~/.p10k.zsh
 
@@ -99,26 +100,20 @@ RUN echo 'export GTK_IM_MODULE=fcitx' >> ~/.xprofile && \
     echo 'export SDL_IM_MODULE=fcitx' >> ~/.xprofile && \
     echo 'fcitx5 -d &' >> ~/.xprofile
 
-# --- SETUP I3WM ---
-# 1. Tạo thư mục config
+# 3.5 Config i3wm & Rofi
 RUN mkdir -p /home/kasm-user/.config/i3 && \
-    mkdir -p /home/kasm-user/.config/rofi
-
-# 2. Tạo file config cơ bản cho i3 (để tránh wizard lần đầu)
-# Lưu ý: "mod4" là phím Windows.
-RUN echo 'set $mod Mod4' > /home/kasm-user/.config/i3/config && \
+    mkdir -p /home/kasm-user/.config/rofi && \
+    # I3 Config
+    echo 'set $mod Mod4' > /home/kasm-user/.config/i3/config && \
     echo 'font pango:MesloLGS NF 10' >> /home/kasm-user/.config/i3/config && \
     echo 'exec --no-startup-id picom -b' >> /home/kasm-user/.config/i3/config && \
     echo 'exec --no-startup-id fcitx5 -d' >> /home/kasm-user/.config/i3/config && \
-    # Set hình nền (Kasm mặc định có hình nền ở bg_default.png)
+    # Wallpaper
     echo 'exec_always --no-startup-id feh --bg-scale /usr/share/backgrounds/bg_default.png' >> /home/kasm-user/.config/i3/config && \
-    # Phím tắt mở Terminal (Dùng WezTerm)
+    # Keybindings
     echo 'bindsym $mod+Return exec wezterm' >> /home/kasm-user/.config/i3/config && \
-    # Phím tắt tắt cửa sổ
     echo 'bindsym $mod+Shift+q kill' >> /home/kasm-user/.config/i3/config && \
-    # Phím tắt mở Rofi (Launcher)
     echo 'bindsym $mod+d exec "rofi -show drun"' >> /home/kasm-user/.config/i3/config && \
-    # Các điều hướng cửa sổ cơ bản
     echo 'bindsym $mod+Left focus left' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+Down focus down' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+Up focus up' >> /home/kasm-user/.config/i3/config && \
@@ -137,19 +132,20 @@ RUN echo 'set $mod Mod4' > /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+space focus mode_toggle' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+Shift+r restart' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+Shift+e exec "i3-nagbar -t warning -m \"Exit?\" -B \"Yes\" \"i3-msg exit\""' >> /home/kasm-user/.config/i3/config && \
-    # Gaps (Khoảng cách giữa các cửa sổ - Modern Look)
+    # Gaps
     echo 'gaps inner 10' >> /home/kasm-user/.config/i3/config && \
     echo 'gaps outer 0' >> /home/kasm-user/.config/i3/config && \
     echo 'smart_gaps on' >> /home/kasm-user/.config/i3/config && \
-    # Thanh trạng thái
     echo 'bar { status_command i3status position top }' >> /home/kasm-user/.config/i3/config
 
-# 3. QUAN TRỌNG: Tạo file .xsession để Kasm chạy i3 thay vì XFCE
-# Kasm VNC startup script sẽ ưu tiên file này
-RUN echo '#!/bin/bash' > /home/kasm-user/.xsession && \
-    echo 'export DESTKTOP_SESSION=i3' >> /home/kasm-user/.xsession && \
-    echo 'exec i3' >> /home/kasm-user/.xsession && \
-    chmod +x /home/kasm-user/.xsession
+# 3.4 FORCE STARTUP (Fix lỗi XFCE chiếm quyền)
+# Tạo file xstartup cho VNC để trỏ thẳng vào i3
+RUN mkdir -p /home/kasm-user/.vnc && \
+    echo '#!/bin/sh' > /home/kasm-user/.vnc/xstartup && \
+    echo 'unset SESSION_MANAGER' >> /home/kasm-user/.vnc/xstartup && \
+    echo 'unset DBUS_SESSION_BUS_ADDRESS' >> /home/kasm-user/.vnc/xstartup && \
+    echo 'exec i3' >> /home/kasm-user/.vnc/xstartup && \
+    chmod +x /home/kasm-user/.vnc/xstartup
 
 USER root
 
@@ -161,7 +157,7 @@ RUN cp -r /home/kasm-user/.oh-my-zsh /home/kasm-default-profile/.oh-my-zsh && \
     cp /home/kasm-user/.p10k.zsh /home/kasm-default-profile/.p10k.zsh && \
     cp /home/kasm-user/.xprofile /home/kasm-default-profile/.xprofile && \
     cp -r /home/kasm-user/.config /home/kasm-default-profile/.config && \
-    cp /home/kasm-user/.xsession /home/kasm-default-profile/.xsession && \
+    cp -r /home/kasm-user/.vnc /home/kasm-default-profile/.vnc && \
     chown -R 1000:1000 /home/kasm-default-profile
 
 USER 1000
