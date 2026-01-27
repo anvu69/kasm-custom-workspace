@@ -73,7 +73,7 @@ RUN git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf && \
 # 3.3 Pre-download Gitstatusd (Fix lỗi fetching... khi khởi động)
 # Tải binary gitstatusd cache sẵn vào thư mục theme để P10k không phải tải lại
 RUN mkdir -p ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin && \
-    wget -O ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin/gitstatusd-linux-x86_64.tar.gz https://github.com/romkatv/gitstatus/releases/download/v1.5.5/gitstatusd-linux-x86_64.tar.gz && \
+    wget -O ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin/gitstatusd-linux-x86_64.tar.gz https://github.com/romkatv/gitstatus/releases/download/v1.5.4/gitstatusd-linux-x86_64.tar.gz && \
     tar -xzf ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin/gitstatusd-linux-x86_64.tar.gz -C ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin/ && \
     rm ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin/gitstatusd-linux-x86_64.tar.gz
 
