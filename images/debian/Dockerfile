@@ -31,23 +31,21 @@ RUN touch /home/kasm-user/.zshrc && \
     git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-/home/kasm-user/.oh-my-zsh/custom}/themes/powerlevel10k && \
     sed -i 's/ZSH_THEME="robbyrussell"/ZSH_THEME="powerlevel10k\/powerlevel10k"/' /home/kasm-user/.zshrc && \
     sed -i 's/plugins=(git)/plugins=(git zsh-autosuggestions zsh-syntax-highlighting zsh-autocomplete zsh-completions z thefuck fzf)/' /home/kasm-user/.zshrc && \
-    echo '# Bypass zsh-newuser-install wizard' >> /home/kasm-user/.zshrc && \
+    echo '# Bypass zsh-newuser-install' >> /home/kasm-user/.zshrc && \
     echo 'autoload -Uz compinit && compinit' >> /home/kasm-user/.zshrc && \
     echo '[[ ! -f ~/.p10k.zsh ]] && p10k configure --non-interactive' >> /home/kasm-user/.zshrc && \
     echo '[[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh' >> /home/kasm-user/.zshrc && \
-    echo '# Powerlevel10k default config (generated non-interactive)' > /home/kasm-user/.p10k.zsh && \
+    echo '# Powerlevel10k config' > /home/kasm-user/.p10k.zsh && \
     echo 'POWERLEVEL9K_MODE="nerdfont-complete"' >> /home/kasm-user/.p10k.zsh && \
     echo 'POWERLEVEL9K_PROMPT_ON_NEWLINE=true' >> /home/kasm-user/.p10k.zsh && \
     echo 'POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(os_icon context dir vcs)' >> /home/kasm-user/.p10k.zsh && \
     echo 'POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status root_indicator background_jobs history time)' >> /home/kasm-user/.p10k.zsh && \
-    echo '[[ -f /usr/bin/zsh ]] && exec zsh' >> /home/kasm-user/.bashrc
+    echo '[[ -f /usr/bin/zsh ]] && exec zsh' >> /home/kasm-user/.bashrc && \
+    echo 'export SHELL=/usr/bin/zsh' >> /home/kasm-user/.profile
+
 USER root
 
-RUN echo "export GTK_IM_MODULE=fcitx" >> /home/kasm-user/.xprofile && \
-    echo "export QT_IM_MODULE=fcitx" >> /home/kasm-user/.xprofile && \
-    echo "export XMODIFIERS=@im=fcitx" >> /home/kasm-user/.xprofile && \
-    echo "export SDL_IM_MODULE=fcitx" >> /home/kasm-user/.xprofile && \
-    echo "export GLFW_IM_MODULE=fcitx" >> /home/kasm-user/.xprofile && \
+RUN echo "export GTK_IM_MODULE=fcitx\nexport QT_IM_MODULE=fcitx\nexport XMODIFIERS=@im=fcitx\nexport SDL_IM_MODULE=fcitx\nexport GLFW_IM_MODULE=fcitx" >> /home/kasm-user/.xprofile && \
     rm -rf /tmp/* /var/tmp/*
 
 USER 1000
