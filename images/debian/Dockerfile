@@ -138,6 +138,7 @@ font pango:MesloLGS NF 10
 # Start services
 exec --no-startup-id picom -b --active-opacity 1.0 --inactive-opacity 0.95 --fade-in-step 0.05
 exec_always --no-startup-id feh --bg-fill /home/kasm-user/Pictures/wallpaper.jpg
+bindsym $mod+Shift+w exec feh --bg-fill /home/kasm-user/Pictures/wallpaper.jpg
 exec --no-startup-id fcitx5 -d
 
 # PHÍM TẮT TERMINAL
@@ -150,35 +151,84 @@ bindsym Control+Shift+space exec "rofi -show drun -show-icons"
 bindsym Control+Shift+Tab exec "rofi -show window -show-icons"
 bindsym Control+Shift+d exec "rofi -show drun -show-icons"
 
-# Window controls
+# --- VIM FOCUS CONTROLS (H J K L) ---
+bindsym $mod+h focus left
+bindsym $mod+j focus down
+bindsym $mod+k focus up
+bindsym $mod+l focus right
+
+# --- VIM MOVE WINDOWS ---
+bindsym $mod+Shift+h move left
+bindsym $mod+Shift+j move down
+bindsym $mod+Shift+k move up
+bindsym $mod+Shift+l move right
+
+# --- MULTI-MONITOR / OUTPUT MANAGEMENT ---
+# Focus màn hình (Output)
+bindsym $mod+Ctrl+h focus output left
+bindsym $mod+Ctrl+l focus output right
+bindsym $mod+Ctrl+j focus output down
+bindsym $mod+Ctrl+k focus output up
+
+# Move workspace sang màn hình khác
+bindsym $mod+Ctrl+Shift+h move workspace to output left
+bindsym $mod+Ctrl+Shift+l move workspace to output right
+
+# --- LAYOUT MODE (Mod+z) ---
+mode "layout" {
+    bindsym s layout stacking; mode "default"
+    bindsym t layout tabbed; mode "default"
+    bindsym v split v; mode "default"
+    bindsym h split h; mode "default"
+    
+    bindsym Escape mode "default"
+    bindsym Return mode "default"
+}
+bindsym $mod+z mode "layout"
+
+# --- WORKSPACES (1-9) ---
+bindsym $mod+1 workspace number 1
+bindsym $mod+2 workspace number 2
+bindsym $mod+3 workspace number 3
+bindsym $mod+4 workspace number 4
+bindsym $mod+5 workspace number 5
+bindsym $mod+6 workspace number 6
+bindsym $mod+7 workspace number 7
+bindsym $mod+8 workspace number 8
+bindsym $mod+9 workspace number 9
+
+bindsym $mod+Shift+1 move container to workspace number 1
+bindsym $mod+Shift+2 move container to workspace number 2
+bindsym $mod+Shift+3 move container to workspace number 3
+bindsym $mod+Shift+4 move container to workspace number 4
+bindsym $mod+Shift+5 move container to workspace number 5
+bindsym $mod+Shift+6 move container to workspace number 6
+bindsym $mod+Shift+7 move container to workspace number 7
+bindsym $mod+Shift+8 move container to workspace number 8
+bindsym $mod+Shift+9 move container to workspace number 9
+
+# --- SYSTEM ---
 bindsym $mod+Shift+q kill
-bindsym $mod+Left focus left
-bindsym $mod+Down focus down
-bindsym $mod+Up focus up
-bindsym $mod+Right focus right
-bindsym $mod+Shift+Left move left
-bindsym $mod+Shift+Down move down
-bindsym $mod+Shift+Up move up
-bindsym $mod+Shift+Right move right
-bindsym $mod+h split h
-bindsym $mod+v split v
-bindsym $mod+f fullscreen toggle
-bindsym $mod+s layout stacking
-bindsym $mod+w layout tabbed
-bindsym $mod+e layout toggle split
-bindsym $mod+Shift+space floating toggle
-# bindsym $mod+space focus mode_toggle
 bindsym $mod+Shift+c reload
 bindsym $mod+Shift+r restart
 bindsym $mod+Shift+e exec "i3-nagbar -t warning -m \"Exit?\" -B \"Yes\" \"i3-msg exit\""
 
-# Gaps
-gaps inner 12
+# --- RESIZE MODE ---
+mode "resize" {
+    bindsym h resize shrink width 10 px or 10 ppt
+    bindsym j resize grow height 10 px or 10 ppt
+    bindsym k resize shrink height 10 px or 10 ppt
+    bindsym l resize grow width 10 px or 10 ppt
+    bindsym Escape mode "default"
+    bindsym Return mode "default"
+}
+bindsym $mod+r mode "resize"
+
+# --- APPEARANCE ---
+gaps inner 2
 gaps outer 0
 smart_gaps on
-default_border pixel 2
-
-# Status Bar (Trỏ vào file config i3status vừa tạo)
+default_border pixel 8
 bar {
         status_command i3status -c /home/kasm-user/.config/i3status/config
         position top
