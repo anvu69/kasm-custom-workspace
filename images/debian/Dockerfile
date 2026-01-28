@@ -137,17 +137,18 @@ font pango:MesloLGS NF 10
 
 # Start services
 exec --no-startup-id picom -b --active-opacity 1.0 --inactive-opacity 0.95 --fade-in-step 0.05
-exec_always --no-startup-id feh --bg-scale /home/kasm-user/Pictures/wallpaper.jpg
+exec_always --no-startup-id feh --bg-fill /home/kasm-user/Pictures/wallpaper.jpg
 exec --no-startup-id fcitx5 -d
 
 # PHÍM TẮT TERMINAL
-bindsym $mod+Return exec wezterm
+# bindsym $mod+Return exec wezterm
 bindsym $alt+Return exec wezterm
 bindsym Control+Return exec xterm
 
-# Rofi (Launcher) - Alt+Space
-bindsym $mod+space exec "rofi -show drun -show-icons"
-bindsym $alt+Tab exec "rofi -show window -show-icons"
+# Rofi (Launcher)
+bindsym Control+Shift+space exec "rofi -show drun -show-icons"
+bindsym Control+Shift+Tab exec "rofi -show window -show-icons"
+bindsym Control+Shift+d exec "rofi -show drun -show-icons"
 
 # Window controls
 bindsym $mod+Shift+q kill
