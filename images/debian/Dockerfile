@@ -197,20 +197,18 @@ RUN echo 'configuration { display-drun: "Applications:"; display-window: "Window
 USER root
 
 # --- PHẦN 4: SYNC PROFILE ---
-RUN mkdir -p /home/kasm-default-profile/.config && \
-    mkdir -p /home/kasm-default-profile/.oh-my-zsh && \
-    mkdir -p /home/kasm-default-profile/Pictures && \
+RUN mkdir -p /home/kasm-default-profile && \
+    mkdir -p /home/kasm-default-profile/.config && \
     cp -r /home/kasm-user/Pictures /home/kasm-default-profile/ && \
+    cp -r /home/kasm-user/.oh-my-zsh /home/kasm-default-profile/ && \
+    cp /home/kasm-user/.zshrc /home/kasm-default-profile/.zshrc && \
+    cp /home/kasm-user/.p10k.zsh /home/kasm-default-profile/.p10k.zsh && \
+    cp /home/kasm-user/.xprofile /home/kasm-default-profile/.xprofile && \
+    cp -r /home/kasm-user/.fzf /home/kasm-default-profile/.fzf && \
     # Copy Config
     cp -r /home/kasm-user/.config/i3 /home/kasm-default-profile/.config/i3 && \
     cp -r /home/kasm-user/.config/i3status /home/kasm-default-profile/.config/i3status && \
     cp -r /home/kasm-user/.config/rofi /home/kasm-default-profile/.config/rofi && \
-    # Copy Zsh
-    cp -r /home/kasm-user/.oh-my-zsh /home/kasm-default-profile/.oh-my-zsh && \
-    cp -r /home/kasm-user/.fzf /home/kasm-default-profile/.fzf && \
-    cp /home/kasm-user/.zshrc /home/kasm-default-profile/.zshrc && \
-    cp /home/kasm-user/.p10k.zsh /home/kasm-default-profile/.p10k.zsh && \
-    cp /home/kasm-user/.xprofile /home/kasm-default-profile/.xprofile && \
     chown -R 1000:1000 /home/kasm-default-profile
 
 # PHẦN 5: SCRIPT KHỞI ĐỘNG (SELF-HEALING)
@@ -240,7 +238,7 @@ if [ ! -f /home/kasm-user/.oh-my-zsh/oh-my-zsh.sh ]; then
     echo "Restoring Oh-My-Zsh..." >> $LOG
     rm -rf /home/kasm-user/.oh-my-zsh
     mkdir -p /home/kasm-user/.oh-my-zsh
-    rsync -a /home/kasm-default-profile/.oh-my-zsh/. /home/kasm-user/.oh-my-zsh/ >> $LOG 2>&1    
+    rsync -a /home/kasm-default-profile/.oh-my-zsh/ /home/kasm-user/.oh-my-zsh/ >> $LOG 2>&1  
 
     cp /home/kasm-default-profile/.zshrc /home/kasm-user/ >> $LOG 2>&1
     cp /home/kasm-default-profile/.p10k.zsh /home/kasm-user/ >> $LOG 2>&1
@@ -249,12 +247,13 @@ fi
 # 4. CHECK I3 CONFIG
 if [ ! -f /home/kasm-user/.config/i3/config ]; then
     echo "Restoring Configs..." >> $LOG
+    mkdir -p /home/kasm-user/.config
     mkdir -p /home/kasm-user/.config/i3
-    rsync -a /home/kasm-default-profile/.config/i3/. /home/kasm-user/.config/i3/ >> $LOG 2>&1
+    rsync -a /home/kasm-default-profile/.config/i3/ /home/kasm-user/.config/i3/ >> $LOG 2>&1
     mkdir -p /home/kasm-user/.config/i3status
-    rsync -a /home/kasm-default-profile/.config/i3status/. /home/kasm-user/.config/i3status/ >> $LOG 2>&1
+    rsync -a /home/kasm-default-profile/.config/i3status/ /home/kasm-user/.config/i3status/ >> $LOG 2>&1
     mkdir -p /home/kasm-user/.config/rofi
-    rsync -a /home/kasm-default-profile/.config/rofi/. /home/kasm-user/.config/rofi/ >> $LOG 2>&1
+    rsync -a /home/kasm-default-profile/.config/rofi/ /home/kasm-user/.config/rofi/ >> $LOG 2>&1
     cp /home/kasm-default-profile/.xprofile /home/kasm-user/ >> $LOG 2>&1
 fi
 
