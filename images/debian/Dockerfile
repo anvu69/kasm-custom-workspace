@@ -82,7 +82,11 @@ RUN mkdir -p ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin && \
     tar -xzf ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin/gitstatusd-linux-x86_64.tar.gz -C ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin/ && \
     rm ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin/gitstatusd-linux-x86_64.tar.gz
 
-# 4.4 Configs (.zshrc, .p10k, .xprofile)
+# 4.4 Wallpaper & Assets
+RUN mkdir -p /home/kasm-user/Pictures && \
+    wget -O /home/kasm-user/Pictures/wallpaper.jpg https://images.unsplash.com/photo-1477346611705-65d1883cee1e?q=80\&w=1920\&auto=format\&fit=crop
+
+# 4.5 Configs (.zshrc, .p10k, .xprofile)
 RUN echo 'export ZSH=$HOME/.oh-my-zsh' > ~/.zshrc && \
     echo 'ZSH_THEME="powerlevel10k/powerlevel10k"' >> ~/.zshrc && \
     echo 'plugins=(git zsh-autosuggestions zsh-syntax-highlighting zsh-autocomplete zsh-completions z thefuck)' >> ~/.zshrc && \
@@ -111,12 +115,13 @@ RUN mkdir -p /home/kasm-user/.config/i3 && \
     # --- I3 CONFIG START ---
     echo 'set $mod Mod4' > /home/kasm-user/.config/i3/config && \
     echo 'font pango:MesloLGS NF 10' >> /home/kasm-user/.config/i3/config && \
-    echo 'exec --no-startup-id picom -b' >> /home/kasm-user/.config/i3/config && \
-    # Wallpaper (Nếu file bg_default không có, nó sẽ màu đen, nhưng i3 vẫn chạy)
-    echo 'exec_always --no-startup-id feh --bg-scale /usr/share/backgrounds/bg_default.png' >> /home/kasm-user/.config/i3/config && \
+    echo 'exec --no-startup-id picom -b --active-opacity 1.0 --inactive-opacity 0.95 --fade-in-step 0.05' >> /home/kasm-user/.config/i3/config && \
+    # Wallpaper
+    echo 'exec_always --no-startup-id feh --bg-scale /home/kasm-user/Pictures/wallpaper.jpg' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+Return exec wezterm' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+Shift+q kill' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+d exec "rofi -show drun"' >> /home/kasm-user/.config/i3/config && \
+    echo 'bindsym $mod+d exec "rofi -show drun -show-icons"' >> /home/kasm-user/.config/i3/config && \
+    echo 'bindsym $mod+Tab exec "rofi -show window -show-icons"' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+Left focus left' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+Down focus down' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+Up focus up' >> /home/kasm-user/.config/i3/config && \
@@ -133,11 +138,18 @@ RUN mkdir -p /home/kasm-user/.config/i3 && \
     echo 'bindsym $mod+e layout toggle split' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+Shift+space floating toggle' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+space focus mode_toggle' >> /home/kasm-user/.config/i3/config && \
+    echo 'bindsym $mod+Shift+c reload' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+Shift+r restart' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+Shift+e exec "i3-nagbar -t warning -m \"Exit?\" -B \"Yes\" \"i3-msg exit\""' >> /home/kasm-user/.config/i3/config && \
     echo 'gaps inner 10' >> /home/kasm-user/.config/i3/config && \
+    echo 'gaps outer 0' >> /home/kasm-user/.config/i3/config && \
     echo 'smart_gaps on' >> /home/kasm-user/.config/i3/config && \
-    echo 'bar { status_command i3status position top }' >> /home/kasm-user/.config/i3/config
+    echo 'default_border pixel 2' >> /home/kasm-user/.config/i3/config && \
+    echo 'bar { status_command i3status position top colors { background #1e1e2e statusline #cdd6f4 separator #f5e0dc focused_workspace #f5c2e7 #f5c2e7 #1e1e2e } }' >> /home/kasm-user/.config/i3/config
+
+# 4.6 Config Rofi Theme
+RUN echo 'configuration { display-drun: "Applications:"; display-window: "Windows:"; show-icons: true; }' > /home/kasm-user/.config/rofi/config.rasi && \
+    echo '@theme "glue_pro_blue"' >> /home/kasm-user/.config/rofi/config.rasi
 
 USER root
 
