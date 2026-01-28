@@ -107,7 +107,7 @@ RUN mkdir -p /home/kasm-user/.config/i3 && \
     mkdir -p /home/kasm-user/.config/rofi && \
     mkdir -p /home/kasm-user/.config/i3status
 
-# --- Config i3status (Tối giản để không bị lỗi trên Container) ---
+# --- Config i3status ---
 RUN cat <<'EOF' > /home/kasm-user/.config/i3status/config
 general {
         colors = yes
@@ -130,7 +130,7 @@ tztime local {
 }
 EOF
 
-# --- Config i3 (Thêm Alt+Enter, trỏ đúng i3status) ---
+# --- Config i3  ---
 RUN cat <<'EOF' > /home/kasm-user/.config/i3/config
 set $mod Mod4
 set $alt Mod1
@@ -143,7 +143,6 @@ exec --no-startup-id fcitx5 -d
 
 # PHÍM TẮT TERMINAL
 bindsym $mod+Return exec wezterm
-# Backup: Ctrl+Enter mở xterm (nếu wezterm lỗi)
 bindsym Control+Return exec xterm
 
 # Rofi (Launcher) - Alt+Space
@@ -214,7 +213,7 @@ RUN mkdir -p /home/kasm-default-profile/.config && \
     cp /home/kasm-user/.xprofile /home/kasm-default-profile/.xprofile && \
     chown -R 1000:1000 /home/kasm-default-profile
 
-# PHẦN 5: SCRIPT KHỞI ĐỘNG THÔNG MINH (SELF-HEALING)
+# PHẦN 5: SCRIPT KHỞI ĐỘNG (SELF-HEALING)
 RUN cat <<'EOF' > /usr/bin/startxfce4
 #!/bin/bash
 LOG="/home/kasm-user/startup.log"
@@ -237,15 +236,21 @@ if [ ! -f /home/kasm-user/Pictures/wallpaper.jpg ]; then
     cp -r /home/kasm-default-profile/Pictures/* /home/kasm-user/Pictures/ >> $LOG 2>&1
 fi
 
-# 3. CHECK CONFIG (Restore nếu thiếu)
+# 3. CHECK ZSH (FIX QUAN TRỌNG: Check riêng folder này)
+if [ ! -d /home/kasm-user/.oh-my-zsh ]; then
+    echo "Restoring Oh-My-Zsh..." >> $LOG
+    cp -r /home/kasm-default-profile/.oh-my-zsh /home/kasm-user/ >> $LOG 2>&1
+    cp /home/kasm-default-profile/.zshrc /home/kasm-user/ >> $LOG 2>&1
+    cp /home/kasm-default-profile/.p10k.zsh /home/kasm-user/ >> $LOG 2>&1
+fi
+
+# 4. CHECK CONFIG (Restore nếu thiếu)
 if [ ! -f /home/kasm-user/.config/i3/config ]; then
     echo "MISSING CONFIG. RESTORING..." >> $LOG
     mkdir -p /home/kasm-user/.config
     cp -r /home/kasm-default-profile/.config/i3 /home/kasm-user/.config/ >> $LOG 2>&1
+    cp -r /home/kasm-default-profile/.config/i3status /home/kasm-user/.config/ >> $LOG 2>&1
     cp -r /home/kasm-default-profile/.config/rofi /home/kasm-user/.config/ >> $LOG 2>&1
-    cp -r /home/kasm-default-profile/.oh-my-zsh /home/kasm-user/ >> $LOG 2>&1
-    cp /home/kasm-default-profile/.zshrc /home/kasm-user/ >> $LOG 2>&1
-    cp /home/kasm-default-profile/.p10k.zsh /home/kasm-user/ >> $LOG 2>&1
     cp /home/kasm-default-profile/.xprofile /home/kasm-user/ >> $LOG 2>&1
 fi
 
