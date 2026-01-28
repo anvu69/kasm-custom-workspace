@@ -105,44 +105,94 @@ RUN echo 'export GTK_IM_MODULE=fcitx' >> ~/.xprofile && \
 # 3.7 Config i3wm & Rofi
 RUN mkdir -p /home/kasm-user/.config/i3 && \
     mkdir -p /home/kasm-user/.config/rofi && \
-    # --- I3 CONFIG ---
-    echo 'set $mod Mod4' > /home/kasm-user/.config/i3/config && \
-    echo 'set $alt Mod1' >> /home/kasm-user/.config/i3/config && \
-    echo 'font pango:MesloLGS NF 10' >> /home/kasm-user/.config/i3/config && \
-    echo 'exec --no-startup-id picom -b --active-opacity 1.0 --inactive-opacity 0.95 --fade-in-step 0.05' >> /home/kasm-user/.config/i3/config && \
-    echo 'exec_always --no-startup-id feh --bg-scale /home/kasm-user/Pictures/wallpaper.jpg' >> /home/kasm-user/.config/i3/config && \
-    echo 'exec --no-startup-id fcitx5 -d' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+Return exec wezterm' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $alt+space exec "rofi -show drun -show-icons"' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $alt+Tab exec "rofi -show window -show-icons"' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+Shift+q kill' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+d exec "rofi -show drun -show-icons"' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+Tab exec "rofi -show window -show-icons"' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+Left focus left' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+Down focus down' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+Up focus up' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+Right focus right' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+Shift+Left move left' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+Shift+Down move down' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+Shift+Up move up' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+Shift+Right move right' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+h split h' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+v split v' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+f fullscreen toggle' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+s layout stacking' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+w layout tabbed' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+e layout toggle split' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+Shift+space floating toggle' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+space focus mode_toggle' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+Shift+c reload' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+Shift+r restart' >> /home/kasm-user/.config/i3/config && \
-    echo 'bindsym $mod+Shift+e exec "i3-nagbar -t warning -m \"Exit?\" -B \"Yes\" \"i3-msg exit\""' >> /home/kasm-user/.config/i3/config && \
-    echo 'gaps inner 10' >> /home/kasm-user/.config/i3/config && \
-    echo 'gaps outer 0' >> /home/kasm-user/.config/i3/config && \
-    echo 'smart_gaps on' >> /home/kasm-user/.config/i3/config && \
-    echo 'default_border pixel 2' >> /home/kasm-user/.config/i3/config && \
-    echo 'bar { status_command i3status position top colors { background #1e1e2e statusline #cdd6f4 separator #f5e0dc focused_workspace #f5c2e7 #f5c2e7 #1e1e2e } }' >> /home/kasm-user/.config/i3/config && \
-    echo 'configuration { display-drun: "Applications:"; display-window: "Windows:"; show-icons: true; }' > /home/kasm-user/.config/rofi/config.rasi && \
+    mkdir -p /home/kasm-user/.config/i3status
+
+# --- Config i3status (Tối giản để không bị lỗi trên Container) ---
+RUN cat <<'EOF' > /home/kasm-user/.config/i3status/config
+general {
+        colors = yes
+        interval = 5
+}
+order += "disk /"
+order += "memory"
+order += "tztime local"
+
+disk "/" {
+        format = " 💾 %avail "
+}
+memory {
+        format = " 🐏 %used / %total "
+        threshold_degraded = "1G"
+        format_degraded = "MEMORY < %available"
+}
+tztime local {
+        format = " 🕒 %Y-%m-%d %H:%M:%S "
+}
+EOF
+
+# --- Config i3 (Thêm Alt+Enter, trỏ đúng i3status) ---
+RUN cat <<'EOF' > /home/kasm-user/.config/i3/config
+set $mod Mod4
+set $alt Mod1
+font pango:MesloLGS NF 10
+
+# Start services
+exec --no-startup-id picom -b --active-opacity 1.0 --inactive-opacity 0.95 --fade-in-step 0.05
+exec_always --no-startup-id feh --bg-scale /home/kasm-user/Pictures/wallpaper.jpg
+exec --no-startup-id fcitx5 -d
+
+# PHÍM TẮT TERMINAL
+bindsym $mod+Return exec wezterm
+# Backup: Ctrl+Enter mở xterm (nếu wezterm lỗi)
+bindsym Control+Return exec xterm
+
+# Rofi (Launcher) - Alt+Space
+bindsym $mod+space exec "rofi -show drun -show-icons"
+bindsym $alt+Tab exec "rofi -show window -show-icons"
+
+# Window controls
+bindsym $mod+Shift+q kill
+bindsym $mod+Left focus left
+bindsym $mod+Down focus down
+bindsym $mod+Up focus up
+bindsym $mod+Right focus right
+bindsym $mod+Shift+Left move left
+bindsym $mod+Shift+Down move down
+bindsym $mod+Shift+Up move up
+bindsym $mod+Shift+Right move right
+bindsym $mod+h split h
+bindsym $mod+v split v
+bindsym $mod+f fullscreen toggle
+bindsym $mod+s layout stacking
+bindsym $mod+w layout tabbed
+bindsym $mod+e layout toggle split
+bindsym $mod+Shift+space floating toggle
+# bindsym $mod+space focus mode_toggle
+bindsym $mod+Shift+c reload
+bindsym $mod+Shift+r restart
+bindsym $mod+Shift+e exec "i3-nagbar -t warning -m \"Exit?\" -B \"Yes\" \"i3-msg exit\""
+
+# Gaps
+gaps inner 12
+gaps outer 0
+smart_gaps on
+default_border pixel 2
+
+# Status Bar (Trỏ vào file config i3status vừa tạo)
+bar {
+        status_command i3status -c /home/kasm-user/.config/i3status/config
+        position top
+        colors {
+            background #1e1e2e
+            statusline #cdd6f4
+            separator #f5e0dc
+            focused_workspace #f5c2e7 #f5c2e7 #1e1e2e
+        }
+}
+EOF
+
+# Rofi theme
+RUN echo 'configuration { display-drun: "Applications:"; display-window: "Windows:"; show-icons: true; }' > /home/kasm-user/.config/rofi/config.rasi && \
     echo '@theme "glue_pro_blue"' >> /home/kasm-user/.config/rofi/config.rasi
 
 USER root
@@ -154,6 +204,7 @@ RUN mkdir -p /home/kasm-default-profile/.config && \
     cp -r /home/kasm-user/Pictures /home/kasm-default-profile/ && \
     # Copy Config
     cp -r /home/kasm-user/.config/i3 /home/kasm-default-profile/.config/i3 && \
+    cp -r /home/kasm-user/.config/i3status /home/kasm-default-profile/.config/i3status && \
     cp -r /home/kasm-user/.config/rofi /home/kasm-default-profile/.config/rofi && \
     # Copy Zsh
     cp -r /home/kasm-user/.oh-my-zsh /home/kasm-default-profile/.oh-my-zsh && \
@@ -168,6 +219,11 @@ RUN cat <<'EOF' > /usr/bin/startxfce4
 #!/bin/bash
 LOG="/home/kasm-user/startup.log"
 echo "--- Startup $(date) ---" > $LOG
+
+# 1. FIX XDG ERROR (Quan trọng cho Fcitx)
+export XDG_RUNTIME_DIR=/tmp/runtime-kasm-user
+mkdir -p $XDG_RUNTIME_DIR
+chmod 700 $XDG_RUNTIME_DIR
 
 # 1. Load môi trường (Env vars cho fcitx, zsh...)
 if [ -r /home/kasm-user/.xprofile ]; then
