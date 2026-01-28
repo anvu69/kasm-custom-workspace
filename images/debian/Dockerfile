@@ -13,9 +13,8 @@ RUN apt update && \
         zsh thefuck fontconfig \
         libgbm1 libxshmfence1 libasound2 \
         chromium \
-        x11-utils \
-        flameshot \
-        i3 rofi picom feh i3status && \
+        x11-utils xterm rsync \
+        flameshot i3 rofi picom feh i3status && \
     # Setup VSCode
     wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /usr/share/keyrings/microsoft-archive-keyring.gpg && \
     echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-archive-keyring.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list && \
@@ -143,6 +142,7 @@ exec --no-startup-id fcitx5 -d
 
 # PHÍM TẮT TERMINAL
 bindsym $mod+Return exec wezterm
+bindsym $alt+Return exec wezterm
 bindsym Control+Return exec xterm
 
 # Rofi (Launcher) - Alt+Space
@@ -229,22 +229,22 @@ if [ -r /home/kasm-user/.xprofile ]; then
     . /home/kasm-user/.xprofile
 fi
 
-# 2. CHECK WALLPAPER (Restore nếu thiếu)
+# 2. CHECK WALLPAPER
 if [ ! -f /home/kasm-user/Pictures/wallpaper.jpg ]; then
     echo "Restoring Wallpaper..." >> $LOG
-    mkdir -p /home/kasm-user/Pictures
-    cp -r /home/kasm-default-profile/Pictures/. /home/kasm-user/Pictures/ >> $LOG 2>&1
+    rsync -a /home/kasm-default-profile/Pictures/ /home/kasm-user/Pictures/ >> $LOG 2>&1
 fi
 
-# 3. CHECK ZSH (FIX QUAN TRỌNG: Check riêng folder này)
+# 3. CHECK ZSH
 if [ ! -f /home/kasm-user/.oh-my-zsh/oh-my-zsh.sh ]; then
     echo "Restoring Oh-My-Zsh..." >> $LOG
     
     # BƯỚC QUAN TRỌNG: Dọn sạch folder cũ (dù rỗng hay lỗi)
     rm -rf /home/kasm-user/.oh-my-zsh
     
-    # BƯỚC QUAN TRỌNG: Copy NỘI DUNG (dấu chấm .) để không bao giờ bị lồng
-    cp -r /home/kasm-default-profile/.oh-my-zsh /home/kasm-user/ >> $LOG 2>&1
+    # RSYNC: Copy nội dung từ nguồn vào đích
+    # Chú ý dấu / ở cuối folder nguồn: "Lấy nội dung bên trong"
+    rsync -a /home/kasm-default-profile/.oh-my-zsh/ /home/kasm-user/.oh-my-zsh/ >> $LOG 2>&1
     
     # Restore các file lẻ
     cp /home/kasm-default-profile/.zshrc /home/kasm-user/ >> $LOG 2>&1
@@ -254,13 +254,12 @@ fi
 # 4. CHECK I3 CONFIG
 if [ ! -f /home/kasm-user/.config/i3/config ]; then
     echo "Restoring Configs..." >> $LOG
-    mkdir -p /home/kasm-user/.config
     mkdir -p /home/kasm-user/.config/i3
-    cp -r /home/kasm-default-profile/.config/i3 /home/kasm-user/.config/ >> $LOG 2>&1
+    rsync -a /home/kasm-default-profile/.config/i3/ /home/kasm-user/.config/i3/ >> $LOG 2>&1
     mkdir -p /home/kasm-user/.config/i3status
-    cp -r /home/kasm-default-profile/.config/i3status /home/kasm-user/.config/ >> $LOG 2>&1
+    rsync -a /home/kasm-default-profile/.config/i3status/ /home/kasm-user/.config/i3status/ >> $LOG 2>&1
     mkdir -p /home/kasm-user/.config/rofi
-    cp -r /home/kasm-default-profile/.config/rofi /home/kasm-user/.config/ >> $LOG 2>&1
+    rsync -a /home/kasm-default-profile/.config/rofi/ /home/kasm-user/.config/rofi/ >> $LOG 2>&1
     cp /home/kasm-default-profile/.xprofile /home/kasm-user/ >> $LOG 2>&1
 fi
 
