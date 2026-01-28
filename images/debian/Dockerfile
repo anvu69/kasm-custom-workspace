@@ -169,12 +169,9 @@ RUN echo '#!/bin/bash' > /usr/bin/startxfce4 && \
     # 1. Load môi trường
     echo 'if [ -r /home/kasm-user/.xprofile ]; then . /home/kasm-user/.xprofile; fi' >> /usr/bin/startxfce4 && \
     # 2. KIỂM TRA & TỰ SỬA LỖI (Quan trọng)
-    # DEBUG: Check if backup exists
-    echo 'echo "Checking backup..." >> $LOG' >> /usr/bin/startxfce4 && \
-    echo 'ls -F /home/kasm-default-profile/.config/ >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
     # LOGIC KHÔI PHỤC
     echo 'if [ ! -f /home/kasm-user/.config/i3/config ]; then' >> /usr/bin/startxfce4 && \
-    echo '    echo "Config missing! Restoring from default profile..."' >> /usr/bin/startxfce4 && \
+    echo '    echo "MISSING CONFIG. RESTORING..." >> $LOG' >> /usr/bin/startxfce4 && \
     echo '    mkdir -p /home/kasm-user/.config' >> /usr/bin/startxfce4 && \
     echo '    cp -r /home/kasm-default-profile/.config/i3 /home/kasm-user/.config/ >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
     echo '    cp -r /home/kasm-default-profile/.config/rofi /home/kasm-user/.config/ >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
@@ -182,12 +179,14 @@ RUN echo '#!/bin/bash' > /usr/bin/startxfce4 && \
     echo '    cp /home/kasm-default-profile/.zshrc /home/kasm-user/ >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
     echo '    cp /home/kasm-default-profile/.p10k.zsh /home/kasm-user/ >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
     echo '    cp /home/kasm-default-profile/.xprofile /home/kasm-user/ >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
-    echo '    chown -R 1000:1000 /home/kasm-user/.config /home/kasm-user/.zshrc /home/kasm-user/.p10k.zsh' >> /usr/bin/startxfce4 && \
     echo '    echo "Restore complete." >> $LOG' >> /usr/bin/startxfce4 && \
     echo 'fi' >> /usr/bin/startxfce4 && \
+    echo 'echo "Fixing permissions..." >> $LOG' >> /usr/bin/startxfce4 && \
+    echo 'chown -R 1000:1000 /home/kasm-user/.config /home/kasm-user/.oh-my-zsh /home/kasm-user/.zshrc /home/kasm-user/.p10k.zsh >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
     # 3. Chạy i3
     echo 'echo "Starting i3..." >> $LOG' >> /usr/bin/startxfce4 && \
-    echo 'exec i3' >> /usr/bin/startxfce4 && \
+    # Dùng dbus-launch để đảm bảo môi trường desktop ổn định
+    echo 'exec dbus-launch --exit-with-session /usr/bin/i3 -V >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
     chmod +x /usr/bin/startxfce4
 
 USER 1000
