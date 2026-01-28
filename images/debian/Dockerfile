@@ -231,26 +231,37 @@ fi
 
 # 2. CHECK WALLPAPER (Restore nếu thiếu)
 if [ ! -f /home/kasm-user/Pictures/wallpaper.jpg ]; then
-    echo "MISSING WALLPAPER. RESTORING..." >> $LOG
+    echo "Restoring Wallpaper..." >> $LOG
     mkdir -p /home/kasm-user/Pictures
-    cp -r /home/kasm-default-profile/Pictures/* /home/kasm-user/Pictures/ >> $LOG 2>&1
+    cp -r /home/kasm-default-profile/Pictures/. /home/kasm-user/Pictures/ >> $LOG 2>&1
 fi
 
 # 3. CHECK ZSH (FIX QUAN TRỌNG: Check riêng folder này)
-if [ ! -d /home/kasm-user/.oh-my-zsh ]; then
+if [ ! -f /home/kasm-user/.oh-my-zsh/oh-my-zsh.sh ]; then
     echo "Restoring Oh-My-Zsh..." >> $LOG
-    cp -r /home/kasm-default-profile/.oh-my-zsh /home/kasm-user/ >> $LOG 2>&1
+    
+    # BƯỚC QUAN TRỌNG: Dọn sạch folder cũ (dù rỗng hay lỗi)
+    rm -rf /home/kasm-user/.oh-my-zsh
+    mkdir -p /home/kasm-user/.oh-my-zsh
+    
+    # BƯỚC QUAN TRỌNG: Copy NỘI DUNG (dấu chấm .) để không bao giờ bị lồng
+    cp -r /home/kasm-default-profile/.oh-my-zsh/. /home/kasm-user/.oh-my-zsh/ >> $LOG 2>&1
+    
+    # Restore các file lẻ
     cp /home/kasm-default-profile/.zshrc /home/kasm-user/ >> $LOG 2>&1
     cp /home/kasm-default-profile/.p10k.zsh /home/kasm-user/ >> $LOG 2>&1
 fi
 
-# 4. CHECK CONFIG (Restore nếu thiếu)
+# 4. CHECK I3 CONFIG
 if [ ! -f /home/kasm-user/.config/i3/config ]; then
-    echo "MISSING CONFIG. RESTORING..." >> $LOG
+    echo "Restoring Configs..." >> $LOG
     mkdir -p /home/kasm-user/.config
-    cp -r /home/kasm-default-profile/.config/i3 /home/kasm-user/.config/ >> $LOG 2>&1
-    cp -r /home/kasm-default-profile/.config/i3status /home/kasm-user/.config/ >> $LOG 2>&1
-    cp -r /home/kasm-default-profile/.config/rofi /home/kasm-user/.config/ >> $LOG 2>&1
+    mkdir -p /home/kasm-user/.config/i3
+    cp -r /home/kasm-default-profile/.config/i3/. /home/kasm-user/.config/i3/ >> $LOG 2>&1
+    mkdir -p /home/kasm-user/.config/i3status
+    cp -r /home/kasm-default-profile/.config/i3status/. /home/kasm-user/.config/i3status/ >> $LOG 2>&1
+    mkdir -p /home/kasm-user/.config/rofi
+    cp -r /home/kasm-default-profile/.config/rofi/. /home/kasm-user/.config/rofi/ >> $LOG 2>&1
     cp /home/kasm-default-profile/.xprofile /home/kasm-user/ >> $LOG 2>&1
 fi
 
