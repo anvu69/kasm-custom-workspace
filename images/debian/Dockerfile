@@ -242,10 +242,9 @@ if [ ! -f /home/kasm-user/.oh-my-zsh/oh-my-zsh.sh ]; then
     
     # BƯỚC QUAN TRỌNG: Dọn sạch folder cũ (dù rỗng hay lỗi)
     rm -rf /home/kasm-user/.oh-my-zsh
-    mkdir -p /home/kasm-user/.oh-my-zsh
     
     # BƯỚC QUAN TRỌNG: Copy NỘI DUNG (dấu chấm .) để không bao giờ bị lồng
-    cp -r /home/kasm-default-profile/.oh-my-zsh/. /home/kasm-user/.oh-my-zsh/ >> $LOG 2>&1
+    cp -r /home/kasm-default-profile/.oh-my-zsh /home/kasm-user/ >> $LOG 2>&1
     
     # Restore các file lẻ
     cp /home/kasm-default-profile/.zshrc /home/kasm-user/ >> $LOG 2>&1
@@ -257,11 +256,11 @@ if [ ! -f /home/kasm-user/.config/i3/config ]; then
     echo "Restoring Configs..." >> $LOG
     mkdir -p /home/kasm-user/.config
     mkdir -p /home/kasm-user/.config/i3
-    cp -r /home/kasm-default-profile/.config/i3/. /home/kasm-user/.config/i3/ >> $LOG 2>&1
+    cp -r /home/kasm-default-profile/.config/i3 /home/kasm-user/.config/ >> $LOG 2>&1
     mkdir -p /home/kasm-user/.config/i3status
-    cp -r /home/kasm-default-profile/.config/i3status/. /home/kasm-user/.config/i3status/ >> $LOG 2>&1
+    cp -r /home/kasm-default-profile/.config/i3status /home/kasm-user/.config/ >> $LOG 2>&1
     mkdir -p /home/kasm-user/.config/rofi
-    cp -r /home/kasm-default-profile/.config/rofi/. /home/kasm-user/.config/rofi/ >> $LOG 2>&1
+    cp -r /home/kasm-default-profile/.config/rofi /home/kasm-user/.config/ >> $LOG 2>&1
     cp /home/kasm-default-profile/.xprofile /home/kasm-user/ >> $LOG 2>&1
 fi
 
