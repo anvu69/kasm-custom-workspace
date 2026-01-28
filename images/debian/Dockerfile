@@ -112,13 +112,17 @@ RUN echo 'export GTK_IM_MODULE=fcitx' >> ~/.xprofile && \
 # 4.5 Config i3wm & Rofi
 RUN mkdir -p /home/kasm-user/.config/i3 && \
     mkdir -p /home/kasm-user/.config/rofi && \
-    # --- I3 CONFIG START ---
+    # --- I3 CONFIG ---
     echo 'set $mod Mod4' > /home/kasm-user/.config/i3/config && \
+    # Khai báo thêm biến Alt (Mod1)
+    echo 'set $alt Mod1' >> /home/kasm-user/.config/i3/config && \
     echo 'font pango:MesloLGS NF 10' >> /home/kasm-user/.config/i3/config && \
     echo 'exec --no-startup-id picom -b --active-opacity 1.0 --inactive-opacity 0.95 --fade-in-step 0.05' >> /home/kasm-user/.config/i3/config && \
     # Wallpaper
     echo 'exec_always --no-startup-id feh --bg-scale /home/kasm-user/Pictures/wallpaper.jpg' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+Return exec wezterm' >> /home/kasm-user/.config/i3/config && \
+    echo 'bindsym $alt+space exec "rofi -show drun -show-icons"' >> /home/kasm-user/.config/i3/config && \
+    echo 'bindsym $alt+Tab exec "rofi -show window -show-icons"' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+Shift+q kill' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+d exec "rofi -show drun -show-icons"' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+Tab exec "rofi -show window -show-icons"' >> /home/kasm-user/.config/i3/config && \
