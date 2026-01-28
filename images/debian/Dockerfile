@@ -100,8 +100,7 @@ RUN curl -fsSL https://raw.githubusercontent.com/romkatv/powerlevel10k/master/co
 RUN echo 'export GTK_IM_MODULE=fcitx' >> ~/.xprofile && \
     echo 'export QT_IM_MODULE=fcitx' >> ~/.xprofile && \
     echo 'export XMODIFIERS=@im=fcitx' >> ~/.xprofile && \
-    echo 'export SDL_IM_MODULE=fcitx' >> ~/.xprofile && \
-    echo 'fcitx5 -d &' >> ~/.xprofile
+    echo 'export SDL_IM_MODULE=fcitx' >> ~/.xprofile
 
 # 3.7 Config i3wm & Rofi
 RUN mkdir -p /home/kasm-user/.config/i3 && \
@@ -112,6 +111,7 @@ RUN mkdir -p /home/kasm-user/.config/i3 && \
     echo 'font pango:MesloLGS NF 10' >> /home/kasm-user/.config/i3/config && \
     echo 'exec --no-startup-id picom -b --active-opacity 1.0 --inactive-opacity 0.95 --fade-in-step 0.05' >> /home/kasm-user/.config/i3/config && \
     echo 'exec_always --no-startup-id feh --bg-scale /home/kasm-user/Pictures/wallpaper.jpg' >> /home/kasm-user/.config/i3/config && \
+    echo 'exec --no-startup-id fcitx5 -d' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+Return exec wezterm' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $alt+space exec "rofi -show drun -show-icons"' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $alt+Tab exec "rofi -show window -show-icons"' >> /home/kasm-user/.config/i3/config && \
@@ -141,10 +141,8 @@ RUN mkdir -p /home/kasm-user/.config/i3 && \
     echo 'gaps outer 0' >> /home/kasm-user/.config/i3/config && \
     echo 'smart_gaps on' >> /home/kasm-user/.config/i3/config && \
     echo 'default_border pixel 2' >> /home/kasm-user/.config/i3/config && \
-    echo 'bar { status_command i3status position top colors { background #1e1e2e statusline #cdd6f4 separator #f5e0dc focused_workspace #f5c2e7 #f5c2e7 #1e1e2e } }' >> /home/kasm-user/.config/i3/config
-
-# 3.8 Config Rofi Theme
-RUN echo 'configuration { display-drun: "Applications:"; display-window: "Windows:"; show-icons: true; }' > /home/kasm-user/.config/rofi/config.rasi && \
+    echo 'bar { status_command i3status position top colors { background #1e1e2e statusline #cdd6f4 separator #f5e0dc focused_workspace #f5c2e7 #f5c2e7 #1e1e2e } }' >> /home/kasm-user/.config/i3/config && \
+    echo 'configuration { display-drun: "Applications:"; display-window: "Windows:"; show-icons: true; }' > /home/kasm-user/.config/rofi/config.rasi && \
     echo '@theme "glue_pro_blue"' >> /home/kasm-user/.config/rofi/config.rasi
 
 USER root
@@ -166,36 +164,51 @@ RUN mkdir -p /home/kasm-default-profile/.config && \
     chown -R 1000:1000 /home/kasm-default-profile
 
 # PHẦN 5: SCRIPT KHỞI ĐỘNG THÔNG MINH (SELF-HEALING)
-# Script này thay thế startxfce4, có thêm logic kiểm tra và hồi phục config
-RUN echo '#!/bin/bash' > /usr/bin/startxfce4 && \
-    echo 'LOG="/home/kasm-user/startup.log"' >> /usr/bin/startxfce4 && \
-    echo 'echo "--- Startup $(date) ---" > $LOG' >> /usr/bin/startxfce4 && \
-    # 1. Load môi trường
-    echo 'if [ -r /home/kasm-user/.xprofile ]; then . /home/kasm-user/.xprofile; fi' >> /usr/bin/startxfce4 && \
-    # 2. KIỂM TRA WALLPAPER & CONFIG
-    echo 'if [ ! -f /home/kasm-user/Pictures/wallpaper.jpg ]; then' >> /usr/bin/startxfce4 && \
-    echo '   echo "MISSING WALLPAPER. RESTORING..." >> $LOG' >> /usr/bin/startxfce4 && \
-    echo '   mkdir -p /home/kasm-user/Pictures' >> /usr/bin/startxfce4 && \
-    echo '   cp -r /home/kasm-default-profile/Pictures/* /home/kasm-user/Pictures/ >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
-    # LOGIC KHÔI PHỤC
-    echo 'if [ ! -f /home/kasm-user/.config/i3/config ]; then' >> /usr/bin/startxfce4 && \
-    echo '    echo "MISSING CONFIG. RESTORING..." >> $LOG' >> /usr/bin/startxfce4 && \
-    echo '    mkdir -p /home/kasm-user/.config' >> /usr/bin/startxfce4 && \
-    echo '    cp -r /home/kasm-default-profile/.config/i3 /home/kasm-user/.config/ >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
-    echo '    cp -r /home/kasm-default-profile/.config/rofi /home/kasm-user/.config/ >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
-    echo '    cp -r /home/kasm-default-profile/.oh-my-zsh /home/kasm-user/ >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
-    echo '    cp /home/kasm-default-profile/.zshrc /home/kasm-user/ >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
-    echo '    cp /home/kasm-default-profile/.p10k.zsh /home/kasm-user/ >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
-    echo '    cp /home/kasm-default-profile/.xprofile /home/kasm-user/ >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
-    echo '    echo "Restore complete." >> $LOG' >> /usr/bin/startxfce4 && \
-    echo 'fi' >> /usr/bin/startxfce4 && \
-    echo 'echo "Fixing permissions..." >> $LOG' >> /usr/bin/startxfce4 && \
-    echo 'chown -R 1000:1000 /home/kasm-user/.config /home/kasm-user/.oh-my-zsh /home/kasm-user/.zshrc /home/kasm-user/.p10k.zsh >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
-    # 3. Chạy i3
-    echo 'echo "Starting i3..." >> $LOG' >> /usr/bin/startxfce4 && \
-    # Dùng dbus-launch để đảm bảo môi trường desktop ổn định
-    echo 'exec dbus-launch --exit-with-session /usr/bin/i3 -V >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
-    chmod +x /usr/bin/startxfce4
+RUN cat <<'EOF' > /usr/bin/startxfce4
+#!/bin/bash
+LOG="/home/kasm-user/startup.log"
+echo "--- Startup $(date) ---" > $LOG
+
+# 1. Load môi trường (Env vars cho fcitx, zsh...)
+if [ -r /home/kasm-user/.xprofile ]; then
+    . /home/kasm-user/.xprofile
+fi
+
+# 2. CHECK WALLPAPER (Restore nếu thiếu)
+if [ ! -f /home/kasm-user/Pictures/wallpaper.jpg ]; then
+    echo "MISSING WALLPAPER. RESTORING..." >> $LOG
+    mkdir -p /home/kasm-user/Pictures
+    cp -r /home/kasm-default-profile/Pictures/* /home/kasm-user/Pictures/ >> $LOG 2>&1
+fi
+
+# 3. CHECK CONFIG (Restore nếu thiếu)
+if [ ! -f /home/kasm-user/.config/i3/config ]; then
+    echo "MISSING CONFIG. RESTORING..." >> $LOG
+    mkdir -p /home/kasm-user/.config
+    cp -r /home/kasm-default-profile/.config/i3 /home/kasm-user/.config/ >> $LOG 2>&1
+    cp -r /home/kasm-default-profile/.config/rofi /home/kasm-user/.config/ >> $LOG 2>&1
+    cp -r /home/kasm-default-profile/.oh-my-zsh /home/kasm-user/ >> $LOG 2>&1
+    cp /home/kasm-default-profile/.zshrc /home/kasm-user/ >> $LOG 2>&1
+    cp /home/kasm-default-profile/.p10k.zsh /home/kasm-user/ >> $LOG 2>&1
+    cp /home/kasm-default-profile/.xprofile /home/kasm-user/ >> $LOG 2>&1
+fi
+
+# 4. FIX PERMISSIONS (Quan trọng)
+echo "Fixing permissions..." >> $LOG
+# Chown recursive cẩn thận để tránh lỗi
+chown -R 1000:1000 /home/kasm-user/.config \
+                   /home/kasm-user/.oh-my-zsh \
+                   /home/kasm-user/Pictures \
+                   /home/kasm-user/.zshrc \
+                   /home/kasm-user/.p10k.zsh >> $LOG 2>&1
+
+# 5. START i3
+echo "Starting i3..." >> $LOG
+# Dùng dbus-launch để quản lý session bus cho fcitx/audio
+exec dbus-launch --exit-with-session /usr/bin/i3 -V >> $LOG 2>&1
+EOF
+
+RUN chmod +x /usr/bin/startxfce4
 
 USER 1000
 WORKDIR /home/kasm-user
