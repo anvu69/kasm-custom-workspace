@@ -96,6 +96,7 @@ RUN echo 'export ZSH=$HOME/.oh-my-zsh' > ~/.zshrc && \
 RUN curl -fsSL https://raw.githubusercontent.com/romkatv/powerlevel10k/master/config/p10k-lean.zsh -o ~/.p10k.zsh && \
     sed -i 's/POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(/POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(os_icon /' ~/.p10k.zsh
 
+# .xprofile
 RUN echo 'export GTK_IM_MODULE=fcitx' >> ~/.xprofile && \
     echo 'export QT_IM_MODULE=fcitx' >> ~/.xprofile && \
     echo 'export XMODIFIERS=@im=fcitx' >> ~/.xprofile && \
@@ -107,11 +108,9 @@ RUN mkdir -p /home/kasm-user/.config/i3 && \
     mkdir -p /home/kasm-user/.config/rofi && \
     # --- I3 CONFIG ---
     echo 'set $mod Mod4' > /home/kasm-user/.config/i3/config && \
-    # Khai báo thêm biến Alt (Mod1)
     echo 'set $alt Mod1' >> /home/kasm-user/.config/i3/config && \
     echo 'font pango:MesloLGS NF 10' >> /home/kasm-user/.config/i3/config && \
     echo 'exec --no-startup-id picom -b --active-opacity 1.0 --inactive-opacity 0.95 --fade-in-step 0.05' >> /home/kasm-user/.config/i3/config && \
-    # Wallpaper
     echo 'exec_always --no-startup-id feh --bg-scale /home/kasm-user/Pictures/wallpaper.jpg' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+Return exec wezterm' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $alt+space exec "rofi -show drun -show-icons"' >> /home/kasm-user/.config/i3/config && \
@@ -151,31 +150,43 @@ RUN echo 'configuration { display-drun: "Applications:"; display-window: "Window
 USER root
 
 # --- PHẦN 4: SYNC PROFILE ---
-RUN cp -r /home/kasm-user/.oh-my-zsh /home/kasm-default-profile/.oh-my-zsh && \
+RUN mkdir -p /home/kasm-default-profile/.config && \
+    mkdir -p /home/kasm-default-profile/.oh-my-zsh && \
+    cp -r /home/kasm-user/.config/i3 /home/kasm-default-profile/.config/i3 && \
+    cp -r /home/kasm-user/.config/rofi /home/kasm-default-profile/.config/rofi && \
+    cp -r /home/kasm-user/.oh-my-zsh /home/kasm-default-profile/.oh-my-zsh && \
     cp -r /home/kasm-user/.fzf /home/kasm-default-profile/.fzf && \
     cp /home/kasm-user/.zshrc /home/kasm-default-profile/.zshrc && \
     cp /home/kasm-user/.p10k.zsh /home/kasm-default-profile/.p10k.zsh && \
-    cp -r /home/kasm-user/.config /home/kasm-default-profile/.config && \
     cp /home/kasm-user/.xprofile /home/kasm-default-profile/.xprofile && \
     chown -R 1000:1000 /home/kasm-default-profile
 
 # PHẦN 5: SCRIPT KHỞI ĐỘNG THÔNG MINH (SELF-HEALING)
 # Script này thay thế startxfce4, có thêm logic kiểm tra và hồi phục config
 RUN echo '#!/bin/bash' > /usr/bin/startxfce4 && \
+    echo 'LOG="/home/kasm-user/startup.log"' >> /usr/bin/startxfce4 && \
+    echo 'echo "--- Startup $(date) ---" > $LOG' >> /usr/bin/startxfce4 && \
     # 1. Load môi trường
     echo 'if [ -r /home/kasm-user/.xprofile ]; then . /home/kasm-user/.xprofile; fi' >> /usr/bin/startxfce4 && \
     # 2. KIỂM TRA & TỰ SỬA LỖI (Quan trọng)
-    # Nếu file i3 config không tồn tại ở thư mục người dùng (do mount volume), copy từ backup ra
+    # DEBUG: Check if backup exists
+    echo 'echo "Checking backup..." >> $LOG' >> /usr/bin/startxfce4 && \
+    echo 'ls -F /home/kasm-default-profile/.config/ >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
+    # LOGIC KHÔI PHỤC
     echo 'if [ ! -f /home/kasm-user/.config/i3/config ]; then' >> /usr/bin/startxfce4 && \
     echo '    echo "Config missing! Restoring from default profile..."' >> /usr/bin/startxfce4 && \
     echo '    mkdir -p /home/kasm-user/.config' >> /usr/bin/startxfce4 && \
-    echo '    cp -r /home/kasm-default-profile/.config/i3 /home/kasm-user/.config/' >> /usr/bin/startxfce4 && \
-    echo '    cp -r /home/kasm-default-profile/.config/rofi /home/kasm-user/.config/' >> /usr/bin/startxfce4 && \
-    echo '    cp /home/kasm-default-profile/.zshrc /home/kasm-user/' >> /usr/bin/startxfce4 && \
-    echo '    cp /home/kasm-default-profile/.p10k.zsh /home/kasm-user/' >> /usr/bin/startxfce4 && \
+    echo '    cp -r /home/kasm-default-profile/.config/i3 /home/kasm-user/.config/ >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
+    echo '    cp -r /home/kasm-default-profile/.config/rofi /home/kasm-user/.config/ >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
+    echo '    cp -r /home/kasm-default-profile/.oh-my-zsh /home/kasm-user/ >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
+    echo '    cp /home/kasm-default-profile/.zshrc /home/kasm-user/ >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
+    echo '    cp /home/kasm-default-profile/.p10k.zsh /home/kasm-user/ >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
+    echo '    cp /home/kasm-default-profile/.xprofile /home/kasm-user/ >> $LOG 2>&1' >> /usr/bin/startxfce4 && \
     echo '    chown -R 1000:1000 /home/kasm-user/.config /home/kasm-user/.zshrc /home/kasm-user/.p10k.zsh' >> /usr/bin/startxfce4 && \
+    echo '    echo "Restore complete." >> $LOG' >> /usr/bin/startxfce4 && \
     echo 'fi' >> /usr/bin/startxfce4 && \
     # 3. Chạy i3
+    echo 'echo "Starting i3..." >> $LOG' >> /usr/bin/startxfce4 && \
     echo 'exec i3' >> /usr/bin/startxfce4 && \
     chmod +x /usr/bin/startxfce4
 
