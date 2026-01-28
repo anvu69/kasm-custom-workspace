@@ -238,15 +238,10 @@ fi
 # 3. CHECK ZSH
 if [ ! -f /home/kasm-user/.oh-my-zsh/oh-my-zsh.sh ]; then
     echo "Restoring Oh-My-Zsh..." >> $LOG
-    
-    # BƯỚC QUAN TRỌNG: Dọn sạch folder cũ (dù rỗng hay lỗi)
     rm -rf /home/kasm-user/.oh-my-zsh
-    
-    # RSYNC: Copy nội dung từ nguồn vào đích
-    # Chú ý dấu / ở cuối folder nguồn: "Lấy nội dung bên trong"
-    rsync -a /home/kasm-default-profile/.oh-my-zsh/ /home/kasm-user/.oh-my-zsh/ >> $LOG 2>&1
-    
-    # Restore các file lẻ
+    mkdir -p /home/kasm-user/.oh-my-zsh
+    rsync -a /home/kasm-default-profile/.oh-my-zsh/. /home/kasm-user/.oh-my-zsh/ >> $LOG 2>&1    
+
     cp /home/kasm-default-profile/.zshrc /home/kasm-user/ >> $LOG 2>&1
     cp /home/kasm-default-profile/.p10k.zsh /home/kasm-user/ >> $LOG 2>&1
 fi
@@ -255,11 +250,11 @@ fi
 if [ ! -f /home/kasm-user/.config/i3/config ]; then
     echo "Restoring Configs..." >> $LOG
     mkdir -p /home/kasm-user/.config/i3
-    rsync -a /home/kasm-default-profile/.config/i3/ /home/kasm-user/.config/i3/ >> $LOG 2>&1
+    rsync -a /home/kasm-default-profile/.config/i3/. /home/kasm-user/.config/i3/ >> $LOG 2>&1
     mkdir -p /home/kasm-user/.config/i3status
-    rsync -a /home/kasm-default-profile/.config/i3status/ /home/kasm-user/.config/i3status/ >> $LOG 2>&1
+    rsync -a /home/kasm-default-profile/.config/i3status/. /home/kasm-user/.config/i3status/ >> $LOG 2>&1
     mkdir -p /home/kasm-user/.config/rofi
-    rsync -a /home/kasm-default-profile/.config/rofi/ /home/kasm-user/.config/rofi/ >> $LOG 2>&1
+    rsync -a /home/kasm-default-profile/.config/rofi/. /home/kasm-user/.config/rofi/ >> $LOG 2>&1
     cp /home/kasm-default-profile/.xprofile /home/kasm-user/ >> $LOG 2>&1
 fi
 
