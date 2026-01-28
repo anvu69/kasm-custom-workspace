@@ -34,7 +34,7 @@ RUN apt update && \
     apt clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# --- PHẦN 2: WRAPPER SCRIPTS (CLEAN LOGS) ---
+# --- PHẦN 2: WRAPPER SCRIPTS ---
 # VSCode
 RUN sed -i 's|^Exec=.*|Exec=/usr/share/code/code --no-sandbox --unity-launch %F|' /usr/share/applications/code.desktop && \
     sed -i 's|Icon=.*|Icon=com.visualstudio.code|' /usr/share/applications/code.desktop && \
@@ -50,15 +50,20 @@ RUN sed -i 's|Exec=/usr/bin/chromium %U|Exec=/usr/bin/chromium --no-sandbox --te
     echo '/usr/bin/chromium-orig --no-sandbox --test-type "$@" 2>/dev/null' >> /usr/bin/chromium && \
     chmod +x /usr/bin/chromium
 
-# --- PHẦN 3: USER SETUP (ZSH, FZF, P10K) ---
-ENV START_XFCE4=0
+# --- PHẦN 3: HIJACK XFCE (QUAN TRỌNG: FIX MÀN HÌNH ĐEN) ---
+# Thay thế binary khởi động của XFCE bằng script chạy i3
+RUN echo '#!/bin/bash' > /usr/bin/startxfce4 && \
+    echo 'if [ -r /home/kasm-user/.xprofile ]; then . /home/kasm-user/.xprofile; fi' >> /usr/bin/startxfce4 && \
+    echo 'exec i3' >> /usr/bin/startxfce4 && \
+    chmod +x /usr/bin/startxfce4
 
 RUN usermod -s /usr/bin/zsh kasm-user
 
 USER 1000
 ENV ZSH=/home/kasm-user/.oh-my-zsh
 
-# 3.1 Cài OMZ và Plugins
+# --- PHẦN 4: USER SETUP ---
+# 4.1 OMZ & Plugins
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended && \
     git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH}/custom/plugins/zsh-autosuggestions && \
     git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH}/custom/plugins/zsh-syntax-highlighting && \
@@ -67,17 +72,17 @@ RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master
     git clone https://github.com/rupa/z ${ZSH}/custom/plugins/z && \
     git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH}/custom/themes/powerlevel10k
 
-# 3.2 Cài FZF Thủ công
+# 4.2 FZF Manual
 RUN git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf && \
     ~/.fzf/install --bin
 
-# 3.3 Pre-download Gitstatusd (v1.5.4)
+# 4.3 Gitstatusd (v1.5.4)
 RUN mkdir -p ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin && \
     wget -O ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin/gitstatusd-linux-x86_64.tar.gz https://github.com/romkatv/gitstatus/releases/download/v1.5.4/gitstatusd-linux-x86_64.tar.gz && \
     tar -xzf ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin/gitstatusd-linux-x86_64.tar.gz -C ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin/ && \
     rm ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin/gitstatusd-linux-x86_64.tar.gz
 
-# 3.4 Config .zshrc
+# 4.4 Configs (.zshrc, .p10k, .xprofile)
 RUN echo 'export ZSH=$HOME/.oh-my-zsh' > ~/.zshrc && \
     echo 'ZSH_THEME="powerlevel10k/powerlevel10k"' >> ~/.zshrc && \
     echo 'plugins=(git zsh-autosuggestions zsh-syntax-highlighting zsh-autocomplete zsh-completions z thefuck)' >> ~/.zshrc && \
@@ -100,17 +105,15 @@ RUN echo 'export GTK_IM_MODULE=fcitx' >> ~/.xprofile && \
     echo 'export SDL_IM_MODULE=fcitx' >> ~/.xprofile && \
     echo 'fcitx5 -d &' >> ~/.xprofile
 
-# 3.5 Config i3wm & Rofi
+# 4.5 Config i3wm & Rofi
 RUN mkdir -p /home/kasm-user/.config/i3 && \
     mkdir -p /home/kasm-user/.config/rofi && \
-    # I3 Config
+    # --- I3 CONFIG START ---
     echo 'set $mod Mod4' > /home/kasm-user/.config/i3/config && \
     echo 'font pango:MesloLGS NF 10' >> /home/kasm-user/.config/i3/config && \
     echo 'exec --no-startup-id picom -b' >> /home/kasm-user/.config/i3/config && \
-    echo 'exec --no-startup-id fcitx5 -d' >> /home/kasm-user/.config/i3/config && \
-    # Wallpaper
+    # Wallpaper (Nếu file bg_default không có, nó sẽ màu đen, nhưng i3 vẫn chạy)
     echo 'exec_always --no-startup-id feh --bg-scale /usr/share/backgrounds/bg_default.png' >> /home/kasm-user/.config/i3/config && \
-    # Keybindings
     echo 'bindsym $mod+Return exec wezterm' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+Shift+q kill' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+d exec "rofi -show drun"' >> /home/kasm-user/.config/i3/config && \
@@ -132,32 +135,19 @@ RUN mkdir -p /home/kasm-user/.config/i3 && \
     echo 'bindsym $mod+space focus mode_toggle' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+Shift+r restart' >> /home/kasm-user/.config/i3/config && \
     echo 'bindsym $mod+Shift+e exec "i3-nagbar -t warning -m \"Exit?\" -B \"Yes\" \"i3-msg exit\""' >> /home/kasm-user/.config/i3/config && \
-    # Gaps
     echo 'gaps inner 10' >> /home/kasm-user/.config/i3/config && \
-    echo 'gaps outer 0' >> /home/kasm-user/.config/i3/config && \
     echo 'smart_gaps on' >> /home/kasm-user/.config/i3/config && \
     echo 'bar { status_command i3status position top }' >> /home/kasm-user/.config/i3/config
 
-# 3.4 FORCE STARTUP (Fix lỗi XFCE chiếm quyền)
-# Tạo file xstartup cho VNC để trỏ thẳng vào i3
-RUN mkdir -p /home/kasm-user/.vnc && \
-    echo '#!/bin/sh' > /home/kasm-user/.vnc/xstartup && \
-    echo 'unset SESSION_MANAGER' >> /home/kasm-user/.vnc/xstartup && \
-    echo 'unset DBUS_SESSION_BUS_ADDRESS' >> /home/kasm-user/.vnc/xstartup && \
-    echo 'exec i3' >> /home/kasm-user/.vnc/xstartup && \
-    chmod +x /home/kasm-user/.vnc/xstartup
-
 USER root
 
-# --- PHẦN 4: SYNC ---
-# Đã xóa dòng cp .fzf.zsh gây lỗi
+# --- PHẦN 5: SYNC PROFILE ---
 RUN cp -r /home/kasm-user/.oh-my-zsh /home/kasm-default-profile/.oh-my-zsh && \
     cp -r /home/kasm-user/.fzf /home/kasm-default-profile/.fzf && \
     cp /home/kasm-user/.zshrc /home/kasm-default-profile/.zshrc && \
     cp /home/kasm-user/.p10k.zsh /home/kasm-default-profile/.p10k.zsh && \
-    cp /home/kasm-user/.xprofile /home/kasm-default-profile/.xprofile && \
     cp -r /home/kasm-user/.config /home/kasm-default-profile/.config && \
-    cp -r /home/kasm-user/.vnc /home/kasm-default-profile/.vnc && \
+    cp /home/kasm-user/.xprofile /home/kasm-default-profile/.xprofile && \
     chown -R 1000:1000 /home/kasm-default-profile
 
 USER 1000
