@@ -14,7 +14,7 @@ RUN apt update && \
         libgbm1 libxshmfence1 libasound2 \
         chromium \
         x11-utils xterm rsync \
-        flameshot i3 rofi picom feh i3status && \
+        flameshot i3 rofi picom feh i3blocks x11-xserver-utils && \
     # Setup VSCode
     wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /usr/share/keyrings/microsoft-archive-keyring.gpg && \
     echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-archive-keyring.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list && \
@@ -76,7 +76,7 @@ RUN mkdir -p ${ZSH}/custom/themes/powerlevel10k/gitstatus/usrbin && \
 
 # 3.4 Wallpaper & Assets
 RUN mkdir -p /home/kasm-user/Pictures && \
-    wget -O /home/kasm-user/Pictures/wallpaper.jpg https://images.unsplash.com/photo-1477346611705-65d1883cee1e?q=80\&w=1920\&auto=format\&fit=crop
+    wget -O /home/kasm-user/Pictures/wallpaper.jpg https://images.unsplash.com/photo-1477346611705-65d1883cee1e?q=80\&w=2560\&auto=format\&fit=crop
 
 # 3.5 Configs (.zshrc, .p10k, .xprofile)
 RUN echo 'export ZSH=$HOME/.oh-my-zsh' > ~/.zshrc && \
@@ -104,29 +104,72 @@ RUN echo 'export GTK_IM_MODULE=fcitx' >> ~/.xprofile && \
 # 3.7 Config i3wm & Rofi
 RUN mkdir -p /home/kasm-user/.config/i3 && \
     mkdir -p /home/kasm-user/.config/rofi && \
-    mkdir -p /home/kasm-user/.config/i3status
+    mkdir -p /home/kasm-user/.config/i3blocks && \
+    mkdir -p /home/kasm-user/.scripts
 
-# --- Config i3status ---
-RUN cat <<'EOF' > /home/kasm-user/.config/i3status/config
-general {
-        colors = yes
-        interval = 5
-}
-order += "disk /"
-order += "memory"
-order += "tztime local"
+# --- SCRIPT: VIRTUAL MONITOR SPLIT ---
+RUN cat <<'EOF' > /home/kasm-user/.scripts/split_monitor.sh
+#!/bin/bash
+# Lấy độ phân giải hiện tại
+RES=$(xrandr | grep '*' | awk '{print $1}')
+WIDTH=$(echo $RES | cut -d'x' -f1)
+HEIGHT=$(echo $RES | cut -d'x' -f2)
 
-disk "/" {
-        format = " 💾 %avail "
-}
-memory {
-        format = " 🐏 %used / %total "
-        threshold_degraded = "1G"
-        format_degraded = "MEMORY < %available"
-}
-tztime local {
-        format = " 🕒 %Y-%m-%d %H:%M:%S "
-}
+# Tính toán split (Chia đôi chiều ngang)
+HALF_WIDTH=$((WIDTH / 2))
+
+# Tạo virtual monitor
+# Syntax: xrandr --setmonitor <name> <w>/<mm>x<h>/<mm>+<x>+<y> <output>
+# Xóa monitor ảo cũ nếu có
+xrandr --delmonitor Virtual-Left 2>/dev/null
+xrandr --delmonitor Virtual-Right 2>/dev/null
+
+# Tạo 2 monitor ảo trên cùng 1 output (thường là VNC-0 hoặc Virtual1)
+OUTPUT=$(xrandr | grep " connected" | awk '{print $1}' | head -n 1)
+
+echo "Splitting $RES on $OUTPUT..."
+xrandr --setmonitor Virtual-Left $HALF_WIDTH/1x$HEIGHT/1+0+0 $OUTPUT
+xrandr --setmonitor Virtual-Right $HALF_WIDTH/1x$HEIGHT/1+$HALF_WIDTH+0 none
+
+# Refresh i3 để nhận monitor mới
+i3-msg restart
+feh --bg-fill /home/kasm-user/Pictures/wallpaper.jpg
+EOF
+RUN chmod +x /home/kasm-user/.scripts/split_monitor.sh
+
+# --- CONFIG I3BLOCKS (TOUCH BAR CHO IPAD) ---
+# Tạo các nút bấm tương tác trên thanh bar
+RUN cat <<'EOF' > /home/kasm-user/.config/i3blocks/config
+separator=true
+separator_block_width=15
+
+[launcher]
+full_text= 🚀 MENU 
+command=rofi -show drun -show-icons
+color=#00ff00
+align=center
+
+[terminal]
+full_text=  TERM 
+command=wezterm
+color=#00bfff
+align=center
+
+[split]
+full_text= 🖥️ SPLIT SCREEN 
+command=/home/kasm-user/.scripts/split_monitor.sh
+color=#ff00ff
+align=center
+
+[refresh]
+full_text= 🔄 FIX UI 
+command=feh --bg-fill /home/kasm-user/Pictures/wallpaper.jpg && i3-msg restart
+color=#ffff00
+align=center
+
+[time]
+command=date '+%Y-%m-%d %H:%M:%S'
+interval=1
 EOF
 
 # --- Config i3  ---
@@ -136,10 +179,14 @@ set $alt Mod1
 font pango:MesloLGS NF 10
 
 # Start services
-exec --no-startup-id picom -b --active-opacity 1.0 --inactive-opacity 0.95 --fade-in-step 0.05
-exec_always --no-startup-id feh --bg-fill /home/kasm-user/Pictures/wallpaper.jpg
-bindsym $mod+Shift+w exec feh --bg-fill /home/kasm-user/Pictures/wallpaper.jpg
+exec --no-startup-id picom -b --active-opacity 1.0 --inactive-opacity 0.95 --fade-in-step 0.05 --no-fading-openclose
+exec_always --no-startup-id feh --bg-fill --no-xinerama /home/kasm-user/Pictures/wallpaper.jpg
+
 exec --no-startup-id fcitx5 -d
+
+# --- MOUSE / TOUCH BINDINGS ---
+# Cho phép click vào title bar để kéo thả (tốt cho cảm ứng)
+floating_modifier $mod
 
 # PHÍM TẮT TERMINAL
 # bindsym $mod+Return exec wezterm
@@ -151,78 +198,39 @@ bindsym Control+Shift+space exec "rofi -show drun -show-icons"
 bindsym Control+Shift+Tab exec "rofi -show window -show-icons"
 bindsym Control+Shift+d exec "rofi -show drun -show-icons"
 
+# --- MULTI MONITOR MANAGEMENT (Dành cho Virtual Split) ---
+# Chuyển focus giữa 2 nửa màn hình
+bindsym $mod+h focus output left
+bindsym $mod+l focus output right
+
+# Đẩy cửa sổ sang nửa màn hình kia
+bindsym $mod+Shift+h move workspace to output left
+bindsym $mod+Shift+l move workspace to output right
+
 # --- VIM FOCUS CONTROLS (H J K L) ---
 bindsym $mod+h focus left
 bindsym $mod+j focus down
 bindsym $mod+k focus up
 bindsym $mod+l focus right
 
-# --- VIM MOVE WINDOWS ---
-bindsym $mod+Shift+h move left
-bindsym $mod+Shift+j move down
-bindsym $mod+Shift+k move up
-bindsym $mod+Shift+l move right
-
-# --- MULTI-MONITOR / OUTPUT MANAGEMENT ---
-# Focus màn hình (Output)
-bindsym $mod+Ctrl+h focus output left
-bindsym $mod+Ctrl+l focus output right
-bindsym $mod+Ctrl+j focus output down
-bindsym $mod+Ctrl+k focus output up
-
-# Move workspace sang màn hình khác
-bindsym $mod+Ctrl+Shift+h move workspace to output left
-bindsym $mod+Ctrl+Shift+l move workspace to output right
-
-# --- LAYOUT MODE (Mod+z) ---
-mode "layout" {
-    bindsym s layout stacking; mode "default"
-    bindsym t layout tabbed; mode "default"
-    bindsym v split v; mode "default"
-    bindsym h split h; mode "default"
-    
-    bindsym Escape mode "default"
-    bindsym Return mode "default"
-}
-bindsym $mod+z mode "layout"
-
-# --- WORKSPACES (1-9) ---
-bindsym $mod+1 workspace number 1
-bindsym $mod+2 workspace number 2
-bindsym $mod+3 workspace number 3
-bindsym $mod+4 workspace number 4
-bindsym $mod+5 workspace number 5
-bindsym $mod+6 workspace number 6
-bindsym $mod+7 workspace number 7
-bindsym $mod+8 workspace number 8
-bindsym $mod+9 workspace number 9
-
-bindsym $mod+Shift+1 move container to workspace number 1
-bindsym $mod+Shift+2 move container to workspace number 2
-bindsym $mod+Shift+3 move container to workspace number 3
-bindsym $mod+Shift+4 move container to workspace number 4
-bindsym $mod+Shift+5 move container to workspace number 5
-bindsym $mod+Shift+6 move container to workspace number 6
-bindsym $mod+Shift+7 move container to workspace number 7
-bindsym $mod+Shift+8 move container to workspace number 8
-bindsym $mod+Shift+9 move container to workspace number 9
-
-# --- SYSTEM ---
+# --- WINDOW MANAGEMENT ---
 bindsym $mod+Shift+q kill
-bindsym $mod+Shift+c reload
+bindsym $mod+Left focus left
+bindsym $mod+Down focus down
+bindsym $mod+Up focus up
+bindsym $mod+Right focus right
+bindsym $mod+Shift+Left move left
+bindsym $mod+Shift+Down move down
+bindsym $mod+Shift+Up move up
+bindsym $mod+Shift+Right move right
+bindsym $mod+f fullscreen toggle
+bindsym $mod+s layout stacking
+bindsym $mod+w layout tabbed
+bindsym $mod+e layout toggle split
+bindsym $mod+Shift+space floating toggle
+bindsym $mod+space focus mode_toggle
 bindsym $mod+Shift+r restart
 bindsym $mod+Shift+e exec "i3-nagbar -t warning -m \"Exit?\" -B \"Yes\" \"i3-msg exit\""
-
-# --- RESIZE MODE ---
-mode "resize" {
-    bindsym h resize shrink width 10 px or 10 ppt
-    bindsym j resize grow height 10 px or 10 ppt
-    bindsym k resize shrink height 10 px or 10 ppt
-    bindsym l resize grow width 10 px or 10 ppt
-    bindsym Escape mode "default"
-    bindsym Return mode "default"
-}
-bindsym $mod+r mode "resize"
 
 # --- APPEARANCE ---
 gaps inner 2
@@ -257,9 +265,9 @@ RUN mkdir -p /home/kasm-default-profile && \
     cp /home/kasm-user/.xprofile /home/kasm-default-profile/.xprofile && \
     cp -r /home/kasm-user/.fzf /home/kasm-default-profile/.fzf && \
     # Copy Config
-    cp -r /home/kasm-user/.config/i3 /home/kasm-default-profile/.config/i3 && \
-    cp -r /home/kasm-user/.config/i3status /home/kasm-default-profile/.config/i3status && \
-    cp -r /home/kasm-user/.config/rofi /home/kasm-default-profile/.config/rofi && \
+    cp -r /home/kasm-user/.config/i3 /home/kasm-default-profile/.config/ && \
+    cp -r /home/kasm-user/.config/i3blocks /home/kasm-default-profile/.config/ && \
+    cp -r /home/kasm-user/.config/rofi /home/kasm-default-profile/.config/ && \
     chown -R 1000:1000 /home/kasm-default-profile
 
 # PHẦN 5: SCRIPT KHỞI ĐỘNG (SELF-HEALING)
@@ -288,9 +296,7 @@ fi
 if [ ! -f /home/kasm-user/.oh-my-zsh/oh-my-zsh.sh ]; then
     echo "Restoring Oh-My-Zsh..." >> $LOG
     rm -rf /home/kasm-user/.oh-my-zsh
-    mkdir -p /home/kasm-user/.oh-my-zsh
-    rsync -a /home/kasm-default-profile/.oh-my-zsh/ /home/kasm-user/.oh-my-zsh/ >> $LOG 2>&1  
-
+    rsync -a /home/kasm-default-profile/.oh-my-zsh/ /home/kasm-user/.oh-my-zsh/ >> $LOG 2>&1
     cp /home/kasm-default-profile/.zshrc /home/kasm-user/ >> $LOG 2>&1
     cp /home/kasm-default-profile/.p10k.zsh /home/kasm-user/ >> $LOG 2>&1
 fi
@@ -301,14 +307,14 @@ if [ ! -f /home/kasm-user/.config/i3/config ]; then
     mkdir -p /home/kasm-user/.config
     mkdir -p /home/kasm-user/.config/i3
     rsync -a /home/kasm-default-profile/.config/i3/ /home/kasm-user/.config/i3/ >> $LOG 2>&1
-    mkdir -p /home/kasm-user/.config/i3status
-    rsync -a /home/kasm-default-profile/.config/i3status/ /home/kasm-user/.config/i3status/ >> $LOG 2>&1
+    mkdir -p /home/kasm-user/.config/i3blocks
+    rsync -a /home/kasm-default-profile/.config/i3blocks/ /home/kasm-user/.config/i3blocks/ >> $LOG 2>&1
     mkdir -p /home/kasm-user/.config/rofi
     rsync -a /home/kasm-default-profile/.config/rofi/ /home/kasm-user/.config/rofi/ >> $LOG 2>&1
     cp /home/kasm-default-profile/.xprofile /home/kasm-user/ >> $LOG 2>&1
 fi
 
-# 4. FIX PERMISSIONS (Quan trọng)
+# 5. FIX PERMISSIONS (Quan trọng)
 echo "Fixing permissions..." >> $LOG
 # Chown recursive cẩn thận để tránh lỗi
 chown -R 1000:1000 /home/kasm-user/.config \
@@ -317,7 +323,11 @@ chown -R 1000:1000 /home/kasm-user/.config \
                    /home/kasm-user/.zshrc \
                    /home/kasm-user/.p10k.zsh >> $LOG 2>&1
 
-# 5. START i3
+# 6. AUTO FIX RESOLUTION ON STARTUP
+# Chạy script split monitor sau 2 giây để đảm bảo X11 đã sẵn sàng
+(sleep 2 && /home/kasm-user/.scripts/split_monitor.sh) &
+
+# 7. START i3
 echo "Starting i3..." >> $LOG
 # Dùng dbus-launch để quản lý session bus cho fcitx/audio
 exec dbus-launch --exit-with-session /usr/bin/i3 -V >> $LOG 2>&1
