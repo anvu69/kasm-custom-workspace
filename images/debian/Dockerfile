@@ -207,12 +207,6 @@ bindsym $mod+l focus output right
 bindsym $mod+Shift+h move workspace to output left
 bindsym $mod+Shift+l move workspace to output right
 
-# --- VIM FOCUS CONTROLS (H J K L) ---
-bindsym $mod+h focus left
-bindsym $mod+j focus down
-bindsym $mod+k focus up
-bindsym $mod+l focus right
-
 # --- WINDOW MANAGEMENT ---
 bindsym $mod+Shift+q kill
 bindsym $mod+Left focus left
@@ -235,10 +229,10 @@ bindsym $mod+Shift+e exec "i3-nagbar -t warning -m \"Exit?\" -B \"Yes\" \"i3-msg
 # --- APPEARANCE ---
 gaps inner 2
 gaps outer 0
-smart_gaps on
 default_border pixel 8
+
 bar {
-        status_command i3status -c /home/kasm-user/.config/i3status/config
+        status_command i3blocks -c /home/kasm-user/.config/i3blocks/config
         position top
         colors {
             background #1e1e2e
